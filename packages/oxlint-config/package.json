@@ -1,0 +1,15 @@
+{
+  "name": "@repo/oxlint-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./lint": "./.oxlintrc.json",
+    "./fmt": "./.oxfmt.json"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.21.0",
+    "oxlint": "^1.36.0",
+    "typescript": "^5.9.2"
+  }
+}
