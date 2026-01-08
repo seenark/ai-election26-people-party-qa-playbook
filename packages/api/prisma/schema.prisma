@@ -5,10 +5,218 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "./src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum SourceType {
+    youtube
+    facebook_post
+    manual
+}
+
+enum QAStatus {
+    approved
+    draft
+    rejected
+}
+
+enum PolicyStatus {
+    approved
+    draft
+    deprecated
+}
+
+enum ClusterStatus {
+    active
+    archived
+}
+
+enum CanonicalStatus {
+    approved
+    deprecated
+}
+
+enum InfographicStatus {
+    pending
+    completed
+    failed
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model Source {
+    id         String     @id @default(uuid()) @db.Uuid
+    type       SourceType
+    url        String?    @unique @db.Text
+    raw_text   String?    @db.Text
+    transcript String?    @db.Text
+    speaker    String     @db.Text
+    date       DateTime?  @db.Date
+    processed  Boolean    @default(false)
+    created_at DateTime   @default(now()) @db.Timestamptz(3)
+    updated_at DateTime   @updatedAt @db.Timestamptz(3)
+
+    qa_pairs QAPair[]
+
+    @@map("sources")
+}
+
+model QAPair {
+    id               String   @id @default(uuid()) @db.Uuid
+    source_id        String   @db.Uuid
+    question_text    String   @db.Text
+    answer_text      String   @db.Text
+    ts_start_seconds Int?
+    ts_end_seconds   Int?
+    topic_category   String?  @db.Text
+    region           String?  @db.Text
+    status           QAStatus @default(approved)
+    created_at       DateTime @default(now()) @db.Timestamptz(3)
+    updated_at       DateTime @updatedAt @db.Timestamptz(3)
+
+    source           Source          @relation(fields: [source_id], references: [id], onDelete: Cascade)
+    qa_policy_links  QAPolicyLink[]
+    qa_cluster_links QAClusterLink[]
+
+    @@index([source_id])
+    @@index([status])
+    @@index([topic_category])
+    @@index([region])
+    @@map("qa_pairs")
+}
+
+model Policy {
+    id         String       @id @default(uuid()) @db.Uuid
+    slug       String       @unique @db.Text
+    title      String       @db.Text
+    markdown   String       @db.Text
+    category   String?      @db.Text
+    level      String       @db.Text
+    region     String?      @db.Text
+    url        String       @db.Text
+    status     PolicyStatus
+    created_at DateTime     @default(now()) @db.Timestamptz(3)
+    updated_at DateTime     @updatedAt @db.Timestamptz(3)
+
+    policy_chunks   PolicyChunk[]
+    qa_policy_links QAPolicyLink[]
+
+    @@index([slug])
+    @@index([status])
+    @@index([category])
+    @@index([level])
+    @@map("policies")
+}
+
+model PolicyChunk {
+    id          String                     @id @default(uuid()) @db.Uuid
+    policy_id   String                     @db.Uuid
+    chunk_index Int
+    content     String                     @db.Text
+    /// pgvector: vector(768)
+    /// Prisma can't natively handle this; we use Unsupported
+    embedding   Unsupported("vector(768)")
+    created_at  DateTime                   @default(now()) @db.Timestamptz(3)
+
+    policy Policy @relation(fields: [policy_id], references: [id], onDelete: Cascade)
+
+    @@index([policy_id])
+    @@map("policy_chunks")
+}
+
+model QAPolicyLink {
+    qa_id           String @db.Uuid
+    policy_id       String @db.Uuid
+    relevance_score Float  @db.DoublePrecision
+
+    qa_pair QAPair @relation(fields: [qa_id], references: [id], onDelete: Cascade)
+    policy  Policy @relation(fields: [policy_id], references: [id], onDelete: Cascade)
+
+    @@id([qa_id, policy_id])
+    @@index([policy_id])
+    @@map("qa_policy_links")
+}
+
+model QuestionCluster {
+    id                 String        @id @default(uuid()) @db.Uuid
+    canonical_question String        @db.Text
+    topic_category     String?       @db.Text
+    region             String?       @db.Text
+    status             ClusterStatus @default(active)
+    created_at         DateTime      @default(now()) @db.Timestamptz(3)
+    updated_at         DateTime      @updatedAt @db.Timestamptz(3)
+
+    qa_cluster_links  QAClusterLink[]
+    canonical_answers CanonicalAnswer[]
+
+    @@index([status])
+    @@index([topic_category])
+    @@index([region])
+    @@map("question_clusters")
+}
+
+model QAClusterLink {
+    qa_id            String @db.Uuid
+    cluster_id       String @db.Uuid
+    similarity_score Float  @db.DoublePrecision
+
+    qa_pair QAPair          @relation(fields: [qa_id], references: [id], onDelete: Cascade)
+    cluster QuestionCluster @relation(fields: [cluster_id], references: [id], onDelete: Cascade)
+
+    @@id([qa_id, cluster_id])
+    @@index([cluster_id])
+    @@map("qa_cluster_links")
+}
+
+model CanonicalAnswer {
+    id             String          @id @default(uuid()) @db.Uuid
+    cluster_id     String          @db.Uuid
+    version        Int
+    short_answer   String          @db.Text
+    long_answer    String          @db.Text
+    what           String          @db.Text
+    why            String          @db.Text
+    how            String          @db.Text
+    bullet_points  String[]
+    red_lines      String[]
+    change_summary String?         @db.Text
+    status         CanonicalStatus @default(approved)
+    created_at     DateTime        @default(now()) @db.Timestamptz(3)
+    approved_at    DateTime?       @db.Timestamptz(3)
+
+    cluster      QuestionCluster @relation(fields: [cluster_id], references: [id], onDelete: Cascade)
+    infographics Infographic[]
+
+    @@index([cluster_id])
+    @@index([status])
+    @@index([version])
+    @@map("canonical_answers")
+}
+
+model Infographic {
+    id            String            @id @default(uuid()) @db.Uuid
+    canonical_id  String            @db.Uuid
+    image_url     String?           @db.Text
+    prompt        String?           @db.Text
+    status        InfographicStatus @default(pending)
+    error_message String?           @db.Text
+    created_at    DateTime          @default(now()) @db.Timestamptz(3)
+    completed_at  DateTime?         @db.Timestamptz(3)
+
+    canonical_answer CanonicalAnswer @relation(fields: [canonical_id], references: [id], onDelete: Cascade)
+
+    @@index([canonical_id])
+    @@index([status])
+    @@map("infographics")
 }
