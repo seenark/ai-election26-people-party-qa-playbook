@@ -4,13 +4,7 @@
   "workspaces": {
     "": {
       "name": "election-playbook",
-      "dependencies": {
-        "@ai-sdk/google": "^3.0.6",
-        "ai": "^6.0.22",
-        "effect": "^3.19.14",
-      },
       "devDependencies": {
-        "prisma": "^7.2.0",
         "turbo": "^2.7.2",
         "typescript": "5.9.2",
       },
@@ -109,6 +103,11 @@
     },
     "packages/ai": {
       "name": "@repo/ai",
+      "dependencies": {
+        "@ai-sdk/google": "^3.0.6",
+        "ai": "^6.0.22",
+        "effect": "^3.19.14",
+      },
       "devDependencies": {
         "@types/bun": "latest",
       },
@@ -122,6 +121,7 @@
         "@dotenvx/dotenvx": "^1.51.4",
         "@prisma/adapter-pg": "^7.2.0",
         "@prisma/client": "^7.2.0",
+        "@repo/ai": "workspace:*",
         "@types/pg": "^8.16.0",
         "effect": "^3.19.14",
         "pg": "^8.16.3",

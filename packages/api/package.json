@@ -10,6 +10,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@repo/ai": "workspace:*",
     "@dotenvx/dotenvx": "^1.51.4",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
