@@ -1,3 +1,4 @@
+import { google } from "@ai-sdk/google"
 import { embed } from "ai"
 import { Data, Effect } from "effect"
 
@@ -16,8 +17,9 @@ export class VectorService extends Effect.Service<VectorService>()("Service/Vect
       Effect.tryPromise({
         try: () =>
           embed({
-            model: geminiEmbedding,
+            model: geminiEmbedding.model,
             value: text,
+            providerOptions: geminiEmbedding.providerOptions,
           }),
         catch: (error) => new EmbedTextError({ error, text }),
       }).pipe(Effect.map((d) => d.embedding))

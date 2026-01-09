@@ -1,0 +1,19 @@
+{
+  "name": "notification-worker",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev:worker": "bun run --watch src/index.ts",
+    "build": "bun build.ts"
+  },
+  "dependencies": {
+    "@repo/queues": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

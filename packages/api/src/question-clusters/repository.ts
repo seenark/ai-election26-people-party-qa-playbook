@@ -1,8 +1,7 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { QuestionCluster, Prisma } from "../generated/prisma/client"
+import type { Prisma } from "../generated/prisma/client"
 
 export type QuestionClusterIncludeParams = {
   qa_cluster_links?: boolean
@@ -56,6 +55,16 @@ export class DeleteQuestionClusterError extends Data.TaggedError(
   data: { id: string }
 }> {}
 
+export class UpsertQuestionClusterError extends Data.TaggedError(
+  "Repository/QuestionCluster/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    id: string
+    updates: Prisma.QuestionClusterUpdateInput
+  }
+}> {}
+
 export class QuestionClusterRepository extends Effect.Service<QuestionClusterRepository>()(
   "Repository/QuestionCluster",
   {
@@ -69,7 +78,7 @@ export class QuestionClusterRepository extends Effect.Service<QuestionClusterRep
         region?: string
         status?: Prisma.QuestionClusterCreateInput["status"]
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const { canonical_question, topic_category, region, status } = params
 
         return Effect.tryPromise({
@@ -152,12 +161,34 @@ export class QuestionClusterRepository extends Effect.Service<QuestionClusterRep
         })
       }
 
+      const upsert = (params: {
+        id: string
+        updates: Prisma.QuestionClusterUpdateInput
+      }) => {
+        const { id, updates } = params
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.questionCluster.upsert({
+              where: { id },
+              create: {
+                id,
+                ...updates,
+              } as Prisma.QuestionClusterCreateInput,
+              update: updates,
+            }),
+          catch: (error) =>
+            new UpsertQuestionClusterError({ error, data: params }),
+        })
+      }
+
       return {
         create,
         findById,
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

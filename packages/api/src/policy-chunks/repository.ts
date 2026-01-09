@@ -1,5 +1,4 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import { PrismaClientProvider } from "../lib/prisma"
 
@@ -34,6 +33,15 @@ export class FindSimilarPolicyChunksError extends Data.TaggedError(
   }
 }> {}
 
+export class DeleteManyBySinglePolicyIdError extends Data.TaggedError(
+  "Repository/PolicyChunk/DeleteManyBySinglePolicyId/Error",
+)<{
+  error: unknown
+  data: {
+    policyId: string
+  }
+}> {}
+
 export class PolicyChunkRepository extends Effect.Service<PolicyChunkRepository>()(
   "Repository/PolicyChunk",
   {
@@ -47,7 +55,7 @@ export class PolicyChunkRepository extends Effect.Service<PolicyChunkRepository>
         content: string
         embedding: number[] // length 768
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const { policyId, chunkIndex, content, embedding } = params
 
         const embeddingLiteral = `[${embedding.join(",")}]`
@@ -103,9 +111,23 @@ export class PolicyChunkRepository extends Effect.Service<PolicyChunkRepository>
         })
       }
 
+      const deleteManyBySinglePolicyId = (policyId: string) =>
+        Effect.tryPromise({
+          try: () =>
+            prismaClient.policyChunk.deleteMany({
+              where: { policy_id: policyId },
+            }),
+          catch: (error) =>
+            new DeleteManyBySinglePolicyIdError({
+              error,
+              data: { policyId },
+            }),
+        })
+
       return {
         insertPolicyChunk,
         findSimilarPolicyChunks,
+        deleteManyBySinglePolicyId,
       }
     }),
   },

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "policies" (
   "category"   text,
   "level"      text NOT NULL,
   "region"     text,
+  "url"        text NOT NULL,
   "status"     text NOT NULL,
   "created_at" timestamptz(3) NOT NULL DEFAULT NOW(),
   "updated_at" timestamptz(3) NOT NULL DEFAULT NOW()
@@ -27,7 +28,7 @@ CREATE TABLE IF NOT EXISTS "policy_chunks" (
   "policy_id"   uuid NOT NULL REFERENCES "policies" ("id") ON DELETE CASCADE,
   "chunk_index" integer NOT NULL,
   "content"     text NOT NULL,
-  "embedding"   vector(768) NOT NULL,
+  "embedding"   vector(1024) NOT NULL, -- google gemini embedding default is 3072
   "created_at"  timestamptz(3) NOT NULL DEFAULT NOW()
 );
 

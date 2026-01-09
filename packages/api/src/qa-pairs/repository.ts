@@ -1,8 +1,7 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { QAPair, Prisma } from "../generated/prisma/client"
+import type { Prisma } from "../generated/prisma/client"
 
 export type QAPairIncludeParams = {
   source?: boolean
@@ -61,6 +60,16 @@ export class DeleteQAPairError extends Data.TaggedError(
   data: { id: string }
 }> {}
 
+export class UpsertQAPairError extends Data.TaggedError(
+  "Repository/QAPair/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    id: string
+    updates: Prisma.QAPairUpdateInput
+  }
+}> {}
+
 export class QAPairRepository extends Effect.Service<QAPairRepository>()(
   "Repository/QAPair",
   {
@@ -78,7 +87,7 @@ export class QAPairRepository extends Effect.Service<QAPairRepository>()(
         region?: string
         status?: Prisma.QAPairCreateInput["status"]
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const {
           source_id,
           question_text,
@@ -169,12 +178,33 @@ export class QAPairRepository extends Effect.Service<QAPairRepository>()(
         })
       }
 
+      const upsert = (params: {
+        id: string
+        updates: Prisma.QAPairUpdateInput
+      }) => {
+        const { id, updates } = params
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.qAPair.upsert({
+              where: { id },
+              create: {
+                id,
+                ...updates,
+              } as Prisma.QAPairCreateInput,
+              update: updates,
+            }),
+          catch: (error) => new UpsertQAPairError({ error, data: params }),
+        })
+      }
+
       return {
         create,
         findById,
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

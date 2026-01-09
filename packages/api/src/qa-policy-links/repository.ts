@@ -1,7 +1,7 @@
 import { Data, Effect } from "effect"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { QAPolicyLink, Prisma } from "../generated/prisma/client"
+import type { Prisma } from "../generated/prisma/client"
 
 export type QAPolicyLinkIncludeParams = {
   qa_pair?: boolean
@@ -53,6 +53,17 @@ export class DeleteQAPolicyLinkError extends Data.TaggedError(
 )<{
   error: unknown
   data: { qa_id: string; policy_id: string }
+}> {}
+
+export class UpsertQAPolicyLinkError extends Data.TaggedError(
+  "Repository/QAPolicyLink/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    qa_id: string
+    policy_id: string
+    relevance_score: number
+  }
 }> {}
 
 export class QAPolicyLinkRepository extends Effect.Service<QAPolicyLinkRepository>()(
@@ -169,12 +180,50 @@ export class QAPolicyLinkRepository extends Effect.Service<QAPolicyLinkRepositor
         })
       }
 
+      const upsert = (params: {
+        qa_id: string
+        policy_id: string
+        relevance_score: number
+      }) => {
+        const { qa_id, policy_id, relevance_score } = params
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.qAPolicyLink.upsert({
+              where: {
+                qa_id_policy_id: {
+                  qa_id,
+                  policy_id,
+                },
+              },
+              create: {
+                qa_id,
+                policy_id,
+                relevance_score,
+              },
+              update: {
+                relevance_score,
+              },
+            }),
+          catch: (error) =>
+            new UpsertQAPolicyLinkError({
+              error,
+              data: {
+                qa_id,
+                policy_id,
+                relevance_score,
+              },
+            }),
+        })
+      }
+
       return {
         create,
         find,
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

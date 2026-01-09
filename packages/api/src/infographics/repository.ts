@@ -1,8 +1,7 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { Infographic, Prisma } from "../generated/prisma/client"
+import type { Prisma } from "../generated/prisma/client"
 
 export type InfographicIncludeParams = {
   canonical_answer?: boolean
@@ -55,6 +54,16 @@ export class DeleteInfographicError extends Data.TaggedError(
   data: { id: string }
 }> {}
 
+export class UpsertInfographicError extends Data.TaggedError(
+  "Repository/Infographic/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    id: string
+    updates: Prisma.InfographicUpdateInput
+  }
+}> {}
+
 export class InfographicRepository extends Effect.Service<InfographicRepository>()(
   "Repository/Infographic",
   {
@@ -68,7 +77,7 @@ export class InfographicRepository extends Effect.Service<InfographicRepository>
         prompt?: string
         status?: Prisma.InfographicCreateInput["status"]
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const { canonical_id, image_url, prompt, status } = params
 
         return Effect.tryPromise({
@@ -147,12 +156,33 @@ export class InfographicRepository extends Effect.Service<InfographicRepository>
         })
       }
 
+      const upsert = (params: {
+        id: string
+        updates: Prisma.InfographicUpdateInput
+      }) => {
+        const { id, updates } = params
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.infographic.upsert({
+              where: { id },
+              create: {
+                id,
+                ...updates,
+              } as Prisma.InfographicCreateInput,
+              update: updates,
+            }),
+          catch: (error) => new UpsertInfographicError({ error, data: params }),
+        })
+      }
+
       return {
         create,
         findById,
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

@@ -1,8 +1,8 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
+
+import type { Prisma } from "../generated/prisma/client"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { CanonicalAnswer, Prisma } from "../generated/prisma/client"
 
 export type CanonicalAnswerIncludeParams = {
   cluster?: boolean
@@ -63,6 +63,16 @@ export class DeleteCanonicalAnswerError extends Data.TaggedError(
   data: { id: string }
 }> {}
 
+export class UpsertCanonicalAnswerError extends Data.TaggedError(
+  "Repository/CanonicalAnswer/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    id: string
+    updates: Prisma.CanonicalAnswerUpdateInput
+  }
+}> {}
+
 export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRepository>()(
   "Repository/CanonicalAnswer",
   {
@@ -83,7 +93,7 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
         change_summary?: string
         status?: Prisma.CanonicalAnswerCreateInput["status"]
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const {
           cluster_id,
           version,
@@ -116,23 +126,18 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
                 status,
               },
             }),
-          catch: (error) =>
-            new CreateCanonicalAnswerError({ error, data: params }),
+          catch: (error) => new CreateCanonicalAnswerError({ error, data: params }),
         })
       }
 
-      const findById = (
-        id: string,
-        include?: CanonicalAnswerIncludeParams,
-      ) => {
+      const findById = (id: string, include?: CanonicalAnswerIncludeParams) => {
         return Effect.tryPromise({
           try: () =>
             prismaClient.canonicalAnswer.findUnique({
               where: { id },
               include: include as Prisma.CanonicalAnswerInclude,
             }),
-          catch: (error) =>
-            new FindCanonicalAnswerByIdError({ error, data: { id } }),
+          catch: (error) => new FindCanonicalAnswerByIdError({ error, data: { id } }),
         })
       }
 
@@ -152,15 +157,11 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
               take: limit,
               skip: offset,
             }),
-          catch: (error) =>
-            new FindManyCanonicalAnswersError({ error, data: params }),
+          catch: (error) => new FindManyCanonicalAnswersError({ error, data: params }),
         })
       }
 
-      const update = (params: {
-        id: string
-        updates: Prisma.CanonicalAnswerUpdateInput
-      }) => {
+      const update = (params: { id: string; updates: Prisma.CanonicalAnswerUpdateInput }) => {
         const { id, updates } = params
 
         return Effect.tryPromise({
@@ -169,8 +170,7 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
               where: { id },
               data: updates,
             }),
-          catch: (error) =>
-            new UpdateCanonicalAnswerError({ error, data: params }),
+          catch: (error) => new UpdateCanonicalAnswerError({ error, data: params }),
         })
       }
 
@@ -180,8 +180,24 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
             prismaClient.canonicalAnswer.delete({
               where: { id },
             }),
-          catch: (error) =>
-            new DeleteCanonicalAnswerError({ error, data: { id } }),
+          catch: (error) => new DeleteCanonicalAnswerError({ error, data: { id } }),
+        })
+      }
+
+      const upsert = (params: { id: string; updates: Prisma.CanonicalAnswerUpdateInput }) => {
+        const { id, updates } = params
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.canonicalAnswer.upsert({
+              where: { id },
+              create: {
+                id,
+                ...updates,
+              } as Prisma.CanonicalAnswerCreateInput,
+              update: updates,
+            }),
+          catch: (error) => new UpsertCanonicalAnswerError({ error, data: params }),
         })
       }
 
@@ -191,6 +207,7 @@ export class CanonicalAnswerRepository extends Effect.Service<CanonicalAnswerRep
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

@@ -1,5 +1,4 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import type { Policy, Prisma } from "../generated/prisma/client"
 
@@ -47,13 +46,21 @@ export class DeletePolicyError extends Data.TaggedError("Repository/Policy/Delet
   data: { id: string }
 }> {}
 
+export class UpsertPolicyError extends Data.TaggedError("Repository/Policy/Upsert/Error")<{
+  error: unknown
+  data: {
+    slug: string
+    updates: Prisma.PolicyUpdateInput
+  }
+}> {}
+
 export class PolicyRepository extends Effect.Service<PolicyRepository>()("Repository/Policy", {
   dependencies: [PrismaClientProvider.Default],
   effect: Effect.gen(function* () {
     const { prismaClient } = yield* PrismaClientProvider
 
     const create = (params: Omit<Policy, "id">) => {
-      const id = ulid()
+      const id = Bun.randomUUIDv7()
 
       return Effect.tryPromise({
         try: () =>
@@ -132,6 +139,24 @@ export class PolicyRepository extends Effect.Service<PolicyRepository>()("Reposi
       })
     }
 
+    const upsert = (params: { slug: string; updates: Prisma.PolicyUpdateInput }) => {
+      const { slug, updates } = params
+
+      return Effect.tryPromise({
+        try: () =>
+          prismaClient.policy.upsert({
+            where: { slug },
+            create: {
+              id: Bun.randomUUIDv7(),
+              slug,
+              ...updates,
+            } as Prisma.PolicyCreateInput,
+            update: updates,
+          }),
+        catch: (error) => new UpsertPolicyError({ error, data: params }),
+      })
+    }
+
     return {
       create,
       findById,
@@ -139,6 +164,7 @@ export class PolicyRepository extends Effect.Service<PolicyRepository>()("Reposi
       findMany,
       update,
       deleteById,
+      upsert,
     }
   }),
 }) {}

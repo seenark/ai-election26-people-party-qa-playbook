@@ -1,8 +1,7 @@
 import { Data, Effect } from "effect"
-import { ulid } from "ulid"
 
 import { PrismaClientProvider } from "../lib/prisma"
-import type { Source, Prisma } from "../generated/prisma/client"
+import type { Prisma } from "../generated/prisma/client"
 
 export type SourceIncludeParams = {
   qa_pairs?: boolean
@@ -57,6 +56,16 @@ export class DeleteSourceError extends Data.TaggedError(
   data: { id: string }
 }> {}
 
+export class UpsertSourceError extends Data.TaggedError(
+  "Repository/Source/Upsert/Error",
+)<{
+  error: unknown
+  data: {
+    url?: string
+    updates: Omit<Prisma.SourceCreateInput, "url">
+  }
+}> {}
+
 export class SourceRepository extends Effect.Service<SourceRepository>()(
   "Repository/Source",
   {
@@ -72,7 +81,7 @@ export class SourceRepository extends Effect.Service<SourceRepository>()(
         speaker: string
         date?: Date
       }) => {
-        const id = ulid()
+        const id = Bun.randomUUIDv7()
         const { type, url, raw_text, transcript, speaker, date } = params
 
         return Effect.tryPromise({
@@ -152,12 +161,57 @@ export class SourceRepository extends Effect.Service<SourceRepository>()(
         })
       }
 
+      const upsert = (params: {
+        url?: string
+        updates: Omit<Prisma.SourceCreateInput, "url">
+      }) => {
+        const { url, updates } = params
+
+        // For sources without URL (manual), we can't upsert by URL
+        // Fall back to create
+        if (!url) {
+          return Effect.tryPromise({
+            try: () =>
+              prismaClient.source.create({
+                data: {
+                  id: Bun.randomUUIDv7(),
+                  ...updates,
+                },
+              }),
+            catch: (error) =>
+              new UpsertSourceError({
+                error,
+                data: params,
+              }),
+          })
+        }
+
+        return Effect.tryPromise({
+          try: () =>
+            prismaClient.source.upsert({
+              where: { url },
+              create: {
+                id: Bun.randomUUIDv7(),
+                url,
+                ...updates,
+              },
+              update: updates,
+            }),
+          catch: (error) =>
+            new UpsertSourceError({
+              error,
+              data: params,
+            }),
+        })
+      }
+
       return {
         create,
         findById,
         findMany,
         update,
         deleteById,
+        upsert,
       }
     }),
   },

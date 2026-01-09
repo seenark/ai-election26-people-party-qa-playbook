@@ -104,7 +104,7 @@ model Policy {
     category   String?      @db.Text
     level      String       @db.Text
     region     String?      @db.Text
-    url        String       @db.Text
+    url        String
     status     PolicyStatus
     created_at DateTime     @default(now()) @db.Timestamptz(3)
     updated_at DateTime     @updatedAt @db.Timestamptz(3)
@@ -120,18 +120,19 @@ model Policy {
 }
 
 model PolicyChunk {
-    id          String                     @id @default(uuid()) @db.Uuid
-    policy_id   String                     @db.Uuid
+    id          String                      @id @default(uuid()) @db.Uuid
+    policy_id   String                      @db.Uuid
     chunk_index Int
-    content     String                     @db.Text
+    content     String                      @db.Text
     /// pgvector: vector(768)
     /// Prisma can't natively handle this; we use Unsupported
-    embedding   Unsupported("vector(768)")
-    created_at  DateTime                   @default(now()) @db.Timestamptz(3)
+    embedding   Unsupported("vector(1024)")
+    created_at  DateTime                    @default(now()) @db.Timestamptz(3)
 
-    policy Policy @relation(fields: [policy_id], references: [id], onDelete: Cascade)
+    policy Policy @relation(fields: [policy_id], references: [id], onUpdate: NoAction, onDelete: Cascade, map: "policy_chunks_policy_id_fkey")
 
-    @@index([policy_id])
+    @@index([policy_id], map: "policy_chunks_policy_id_idx")
+    @@index([embedding], map: "policy_chunks_embedding_idx")
     @@map("policy_chunks")
 }
 

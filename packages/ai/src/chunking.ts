@@ -5,6 +5,7 @@ export class ChunkingService extends Effect.Service<ChunkingService>()("Service/
   effect: Effect.gen(function* () {
     const MIN_CHARS = 1200
     const MAX_CHARS = 2400
+    const OVERLAP_CHARS = 300
 
     const splitIntoParagraphs = (text: string) =>
       text
@@ -27,18 +28,23 @@ export class ChunkingService extends Effect.Service<ChunkingService>()("Service/
 
     const joinParagraphs = (a: string, b: string) => (a ? `${a}\n\n${b}` : b)
 
+    const takeOverlap = (text: string) => text.slice(Math.max(0, text.length - OVERLAP_CHARS))
+
     const chunkMarkdown = (markdown: string) => {
       const paragraphs = splitIntoParagraphs(markdown)
       const { chunks, current } = paragraphs.reduce(
         (acc, paragraph) => {
           const current = acc.current
           if (shouldFinalize(current, paragraph)) {
-            return { chunks: [...acc.chunks, current], current: paragraph }
+            return {
+              chunks: [...acc.chunks, current],
+              current: `${takeOverlap(current)}\n\n${paragraph}`,
+            }
           }
           const combined = joinParagraphs(acc.current, paragraph)
 
           if (isLargeEnough(combined)) {
-            return { chunks: [...acc.chunks, combined], current: "" }
+            return { chunks: [...acc.chunks, combined], current: takeOverlap(combined) }
           }
 
           return { ...acc, current: combined }
