@@ -82,6 +82,9 @@
     },
     "apps/ai-worker": {
       "name": "ai-worker",
+      "dependencies": {
+        "@repo/queues": "workspace:*",
+      },
       "devDependencies": {
         "@types/bun": "latest",
       },
@@ -167,6 +170,7 @@
         "@ai-sdk/google": "^3.0.6",
         "ai": "^6.0.22",
         "effect": "^3.19.14",
+        "zod": "^4.3.5",
       },
       "devDependencies": {
         "@types/bun": "latest",

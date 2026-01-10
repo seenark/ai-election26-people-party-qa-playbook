@@ -12,7 +12,7 @@ import { QAPolicyLinkRepository } from "./qa-policy-links/repository"
 import { QuestionClusterRepository } from "./question-clusters/repository"
 import { SourceRepository } from "./sources/repository"
 
-const layerLive = Layer.mergeAll(
+export const dbLayerLive = Layer.mergeAll(
   ChunkingService.Default,
   VectorService.Default,
   PolicyChunkRepository.Default,
@@ -27,4 +27,4 @@ const layerLive = Layer.mergeAll(
   Logger.pretty,
 ).pipe(Layer.provideMerge(PrismaClientProvider.Default))
 
-export const Runtime = ManagedRuntime.make(layerLive)
+export const Runtime = ManagedRuntime.make(dbLayerLive)

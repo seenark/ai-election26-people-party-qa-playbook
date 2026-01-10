@@ -2,6 +2,10 @@
   "name": "ai-worker",
   "module": "src/index.ts",
   "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "@repo/queues": "workspace:*"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

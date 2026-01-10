@@ -1,8 +1,11 @@
 {
-  "name": "@repo/api",
+  "name": "@repo/db",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "typecheck": "bun x tsc --noEmit"
   },
