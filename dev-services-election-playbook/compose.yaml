@@ -1,4 +1,24 @@
 services:
+  init-data:
+    image: busybox
+    command: chmod -R 777 /data
+    volumes:
+      - election_surrealdb:/data
+  election_surrealdb:
+    image: surrealdb/surrealdb:v2
+    command: start --user root --pass root rocksdb:/mydata/mydatabase.db
+    volumes:
+      - election_surrealdb:/mydata
+    healthcheck:
+      test: ["CMD-SHELL", "surreal", "-V"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      init-data:
+        condition: service_completed_successfully
+    ports:
+      - 8888:8000
   election_db:
     image: pgvector/pgvector:pg17
     container_name: election-playbook-db
@@ -28,3 +48,4 @@ services:
 volumes:
   db_data:
   redis_data:
+  election_surrealdb:

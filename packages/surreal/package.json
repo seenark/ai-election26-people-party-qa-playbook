@@ -1,12 +1,9 @@
 {
-  "name": "@repo/ai",
+  "name": "@repo/surreal",
   "module": "src/index.ts",
   "type": "module",
   "exports": {
-    ".": {
-      "default": "./src/index.ts",
-      "import": "./src/index.ts"
-    }
+    ".": "./src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -15,10 +12,8 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.6",
-    "@repo/surreal": "workspace:*",
-    "ai": "^6.0.22",
     "effect": "^3.19.14",
-    "zod": "^4.3.5"
+    "surrealdb": "^1.3.2",
+    "@repo/ai": "workspace:*"
   }
 }

@@ -1,7 +1,7 @@
 import { ChunkingService, VectorService } from "@repo/ai"
 import { Effect } from "effect"
 
-import meta from "../policies-meta/meta.json"
+import meta from "../../../policies-meta/meta.json"
 import { cleanLinks } from "../src/lib/markdown"
 import { PolicyRepository } from "../src/policies/repository"
 import { PolicyChunkRepository } from "../src/policy-chunks/repository"
@@ -65,7 +65,7 @@ const seedPolicy = async (md: { filename: string; url: string }) => {
 }
 
 async function main() {
-  for (const md of meta.slice(1)) {
+  for (const md of meta.slice(0, 1)) {
     const data = await seedPolicy(md)
     console.log("data", data)
   }
