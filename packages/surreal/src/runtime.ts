@@ -6,6 +6,7 @@ import { CanonicalQARepository } from "./canonical-qa/repository"
 import { PolicyRepository } from "./policies/repository"
 import { PolicyChunkRepository } from "./policy-chunks/repository"
 import { SurrealProvider } from "./surreal-provider"
+import { MarkdownRepository } from "./markdown/repository"
 
 export const liveLayer = Layer.mergeAll(
   CanonicalQARepository.Default,
@@ -13,6 +14,7 @@ export const liveLayer = Layer.mergeAll(
   PolicyChunkRepository.Default,
   VectorService.Default,
   ChunkingService.Default,
+  MarkdownRepository.Default,
   Logger.pretty,
 ).pipe(Layer.provideMerge(SurrealProvider.Default))
 
