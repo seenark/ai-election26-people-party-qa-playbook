@@ -1,4 +1,4 @@
-# ai-worker
+# @repo/s3
 
 To install dependencies:
 

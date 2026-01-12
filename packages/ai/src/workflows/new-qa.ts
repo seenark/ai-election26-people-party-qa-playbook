@@ -1,5 +1,6 @@
 import type { EmbeddingModelV3Embedding } from "@ai-sdk/provider"
 
+import { S3Service } from "@repo/s3"
 import { Canonical, Policy, PolicyChunk, Markdown } from "@repo/surreal"
 import { Effect, Array as A, Option, Data } from "effect"
 
@@ -28,6 +29,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
     PolicyChunk.Repository.PolicyChunkRepository.Default,
     Canonical.Repository.CanonicalQARepository.Default,
     Markdown.MarkdownRepository.Default,
+    S3Service.Default,
   ],
   effect: Effect.gen(function* () {
     const agentSvc = yield* AgentService
@@ -36,6 +38,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
     const policyRepo = yield* Policy.Repository.PolicyRepository
     const canonicalRepo = yield* Canonical.Repository.CanonicalQARepository
     const markdownRepo = yield* Markdown.MarkdownRepository
+    const s3Svc = yield* S3Service
 
     const searchPolicyForQA = (qa: { question: string; answer: string }) =>
       Effect.gen(function* () {
@@ -206,19 +209,24 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
             )
             .pipe(Effect.retry(agentSvc.retryN(2)))
 
-          // const image = yield* agentSvc
-          //   .infographicAgent(JSON.stringify(newCanonicalQA))
-          //   .pipe(Effect.retry(agentSvc.retryN(2)))
+          const image: {
+            file: Uint8Array<ArrayBufferLike>
+            filename: string
+            extension: string
+          } = yield* agentSvc
+            .infographicAgent(JSON.stringify(newCanonicalQA))
+            .pipe(Effect.retry(agentSvc.retryN(2)))
           // const filePath = yield* agentSvc.saveImage({
           //   ...image,
           //   folder: "./images/",
           // })
+          const saveSuccessCount = yield* s3Svc.write(image.filename, image.file)
 
           const saved: Canonical.Repository.CanonicalQA = yield* canonicalRepo.create({
             embedding: embedding,
             qa: allQAs,
             ...newCanonicalQA,
-            imageLink: "a.png", // filePath.filename,
+            imageLink: `${Bun.env.S3_URL}/${Bun.env.S3_BUCKET_NAME}/${image.filename}`,
           })
 
           const markdown = yield* agentSvc.genMarkdown(saved)

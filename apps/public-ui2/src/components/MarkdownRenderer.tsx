@@ -1,5 +1,6 @@
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkAlert from "remark-github-blockquote-alert"
 // import { TypographyH1, TypographyP } from "@/components/ui/typography";
 
 export function MarkdownRenderer({ content }: { content: string }) {
@@ -9,9 +10,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h1 className="text-4xl font-bold text-gray-900 mt-8 mb-6 leading-tight">
-              {children}
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900 mt-8 mb-6 leading-tight">{children}</h1>
           ),
           h2: ({ children }) => (
             <h2 className="text-3xl font-semibold text-gray-900 mt-12 mb-5 pb-2 border-b border-gray-200">
@@ -19,33 +18,19 @@ export function MarkdownRenderer({ content }: { content: string }) {
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-xl font-semibold text-gray-800 mt-8 mb-4">
-              {children}
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-800 mt-8 mb-4">{children}</h3>
           ),
-          
+
           p: ({ children }) => (
-            <p className="text-base text-gray-700 leading-relaxed mb-5">
-              {children}
-            </p>
+            <p className="text-base text-gray-700 leading-relaxed mb-5">{children}</p>
           ),
-          
+
           strong: ({ children }) => (
-            <strong className="font-semibold text-gray-900">
-              {children}
-            </strong>
+            <strong className="font-semibold text-gray-900">{children}</strong>
           ),
-          
-          ul: ({ children }) => (
-            <ul className="space-y-2 mb-6 ml-6">
-              {children}
-            </ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="space-y-2 mb-6 ml-6 list-decimal">
-              {children}
-            </ol>
-          ),
+
+          ul: ({ children }) => <ul className="space-y-2 mb-6 ml-6">{children}</ul>,
+          ol: ({ children }) => <ol className="space-y-2 mb-6 ml-6 list-decimal">{children}</ol>,
           li: ({ children }) => (
             <li className="text-gray-700 leading-relaxed pl-2">
               <span className="inline-flex items-start">
@@ -56,7 +41,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ),
 
           a: ({ href, children }) => (
-            <a 
+            <a
               href={href}
               className="text-blue-600 hover:text-blue-800 underline underline-offset-2 transition-colors"
               target="_blank"
@@ -65,19 +50,17 @@ export function MarkdownRenderer({ content }: { content: string }) {
               {children}
             </a>
           ),
-          
-          hr: () => (
-            <hr className="my-8 border-t border-gray-200" />
-          ),
-          
+
+          hr: () => <hr className="my-8 border-t border-gray-200" />,
+
           code: ({ children }) => (
             <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
               {children}
             </code>
           ),
-          
+
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-gray-300 pl-4 py-2 my-6 italic text-gray-600">
+            <blockquote className="border-l-4 border-orange-400 pl-4 py-2 my-6 italic text-gray-800">
               {children}
             </blockquote>
           ),
@@ -86,6 +69,5 @@ export function MarkdownRenderer({ content }: { content: string }) {
         {content}
       </ReactMarkdown>
     </div>
-  );
+  )
 }
-

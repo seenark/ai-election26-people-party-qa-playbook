@@ -1,15 +1,17 @@
 {
-  "name": "ai-worker",
+  "name": "@repo/s3",
   "module": "src/index.ts",
   "type": "module",
-  "scripts": {},
-  "dependencies": {
-    "@repo/queues": "workspace:*"
+  "exports": {
+    ".": "./src/index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "effect": "^3.19.14"
   }
 }

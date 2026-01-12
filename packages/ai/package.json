@@ -17,6 +17,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.6",
     "@repo/surreal": "workspace:*",
+    "@repo/s3": "workspace:*",
     "ai": "^6.0.22",
     "effect": "^3.19.14",
     "zod": "^4.3.5"

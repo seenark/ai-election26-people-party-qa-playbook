@@ -2,11 +2,19 @@ import { Canonical } from "@repo/surreal"
 import { z } from "zod"
 
 export const CardDataSchema = z.object({
-  title: z.string().describe("Thai title for homepage card (max 80 characters)"),
+  title: z
+    .string()
+    .describe(
+      "A stunning, provocative question in Thai that forces the candidate to read (max 80 characters)",
+    ),
   shortDescription: z
     .string()
-    .describe("Thai short description for homepage card (max 150 characters)"),
-  tags: z.array(z.string()).min(3).max(5).describe("3-5 Thai tags/keywords"),
+    .describe("A brief Thai summary of the solution to the stunning question (max 150 characters)"),
+  tags: z
+    .array(z.string())
+    .min(3)
+    .max(4)
+    .describe("3-4 tough, realistic questions in Thai that voters or media might ask"),
   image: z.string().describe("Image name from imageLink field"),
 })
 
@@ -25,85 +33,91 @@ export type MarkdownContent = z.infer<typeof MarkdownContentSchema>
 export const MARKDOWN_TEMPLATE = `
 ![ภาพประกอบนโยบาย]({{imageLink}})
 
-## {{title}}
+## {{stunningQuestionTitle}}
 
-### สรุปนโยบายโดยย่อ
+### ❓ คำถามท้าทายที่ต้องเตรียมรับมือ
+> *คำถามสำคัญที่ประชาชนและสื่อมวลชนอาจถามคุณ:*
+- {{questionTag1}}
+- {{questionTag2}}
+- {{questionTag3}}
+- {{questionTag4}}
+
+---
+
+### 💡 สรุปคำตอบเชิงกลยุทธ์
 {{executiveSummary}}
 
-### ประเด็นสำคัญ
+### 🎯 ประเด็นสำคัญที่ต้องสื่อสาร
 {{keyPoints}}
 
-### ปัญหาที่ต้องแก้ไข (What)
-**ประเด็นปัญหา:**
+### ⚠️ วิกฤตและปัญหาที่ต้องเร่งแก้ไข (What)
+**สถานการณ์ปัจจุบัน:**
 {{issue}}
+
+### 🚀 ผลลัพธ์ที่คาดหวัง (Why)
+{{expectedOutcome}}
 
 **กลุ่มที่ได้รับผลกระทบ:**
 {{affectedGroups}}
 
-### เป้าหมายของนโยบาย (Why)
-{{rationale}}
-
-**หลักการของพรรค:**
-{{partyPrinciple}}
-
-### แนวทางดำเนินการ (How)
-**มาตรการสำคัญ:**
+### 🛠 แนวทางและมาตรการของพรรค (How)
+**มาตรการหลัก:**
 {{actions}}
 
-> *หมายเหตุ: นโยบายประกอบด้วยมาตรการเพิ่มเติมเพื่อสนับสนุนการดำเนินงานอย่างเป็นระบบ*
-
-### ทรัพยากรและกรอบเวลา
-**ทรัพยากรที่ใช้:**
+### ⏳ งบประมาณและกรอบเวลา
+**ทรัพยากรและงบประมาณ:**
 {{resources}}
 
-**กรอบเวลา:**
+**กรอบเวลาดำเนินการ:**
 {{timeline}}
 
-### ผลลัพธ์ที่คาดหวัง
-{{expectedOutcome}}
+### 📢 แนวทางการสื่อสาร
+> **การตอบแบบสั้น (Short Answer):**
+> {{shortAnswer}}
 
-### ประโยคสื่อสารสำหรับผู้สมัคร
-**คำตอบสั้น:**
-{{shortAnswer}}
+> **การสื่อสารเชิงโน้มน้าว (Persuasive Message):**
+> {{persuasiveAnswer}}
 
-**คำตอบเชิงโน้มน้าว:**
-{{persuasiveAnswer}}
-
-### ลิงก์นโยบายที่เกี่ยวข้อง
+### 🔗 ข้อมูลเพิ่มเติมและอ้างอิง
 {{policyLinks}}
 `
 
 export const SYSTEM_PROMPT = `
-You are a senior political communication expert and policy content editor.
+You are a Senior Campaign Strategist and Debate Coach for a major political party.
 
-CRITICAL OUTPUT RULE:
-- Output language: Thai ONLY
-- Generate BOTH markdown content AND card data in a single response
-- Follow the Markdown template structure EXACTLY
+CRITICAL GOAL:
+Your job is to prepare the candidate for high-pressure media interviews and voter town halls. The content must be "Candidate-Ready" and strategic.
 
-MARKDOWN STRUCTURE (in order):
-1. Image (using imageLink)
-2. Title (##)
-3. Executive Summary (###)
-4. Key Takeaways (###)
-5. Problem - What (###)
-6. Policy Objectives - Why (###)
-7. Policy Actions - How (###)
-8. Resources & Timeline (###)
-9. Expected Outcomes (###)
-10. Talking Points (###)
-11. Policy Links (###)
+OUTPUT RULES:
+1. LANGUAGE: ALL output must be in Thai.
+2. TITLE: The title must be a "Stunning Question." It should be provocative, urgent, or a "hard truth" that makes the candidate realize they need to be prepared.
+3. TAGS AS TOUGH QUESTIONS: Generate 3-4 realistic, difficult questions that voters or journalists would actually ask. These must be used as 'tags' in the JSON and also listed at the top of the Markdown.
+4. SECTION HEADING: Use "แนวทางการสื่อสาร" for the messaging section.
+5. NO DISCLAIMERS: Do not include any footnotes, "additional measures" notes, or disclaimers.
+6. IMAGE: Use the provided imageLink exactly as a Markdown image at the very top.
+7. MARKDOWN STRUCTURE: Follow the template exactly in this order:
+   - Image
+   - Stunning Question Title
+   - Tough Questions Section (Tags)
+   - Strategic Summary
+   - Key Points
+   - Problem (What)
+   - Expected Outcomes (Why)
+   - Policy Actions (How)
+   - Resources & Timeline
+   - Communication Guidelines
+   - Policy Links
 
 CARD DATA RULES:
-- Title: Clear, impactful, ≤80 characters
-- Short Description: Benefit-focused, ≤150 characters
-- Tags: 3-5 concise Thai keywords
+- Title: A stunning question, ≤80 characters
+- Short Description: Solution-focused summary, ≤150 characters
+- Tags: 3-4 tough questions voters/media might ask
 - Image: Use the provided imageLink exactly
 
 CONTENT RULES:
 - Be accurate and grounded only in the input data
 - Do NOT invent numbers, budgets, or timelines
-- Maintain calm, professional, candidate-ready tone
+- Maintain strategic, authoritative, and urgent tone
 - Do NOT compare with other parties
 - Do NOT use "ฟรี" unless explicitly stated
 - Do NOT guarantee outcomes beyond stated expectations
@@ -113,6 +127,9 @@ RED LINE COMPLIANCE:
 - No fabrication or inference
 - No competitor mentions
 - No overpromising
+
+TONE:
+Strategic, authoritative, and urgent. Focus on "Winning the Argument" while staying strictly grounded in the provided policy facts.
 
 Your output must strictly follow the JSON schema with both 'markdown' and 'card' fields.
 `
@@ -169,15 +186,16 @@ ${data.policyLinks.map((link) => `- [${link.title}](${link.url})`).join("\n")}
 **Red Lines (DO NOT VIOLATE):**
 ${data.redLines.map((line, i) => `${i + 1}. ${line}`).join("\n")}
 
-**Image URL:**
+**Image:**
 ${data.imageLink || "No image provided"}
 
 ---
 
 OUTPUT REQUIREMENTS:
 1. 'markdown' field: Complete markdown following the template above
-2. 'card' field: Concise card data for homepage display
+2. 'card' field: Must include a stunning question as title and tough questions as tags
 3. Language: Thai only
 4. Strict compliance with red lines
+5. The "Tough Questions" section must appear at the top of the markdown, right after the title
 `
 }
