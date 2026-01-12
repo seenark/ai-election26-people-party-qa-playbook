@@ -1,10 +1,15 @@
+import type { Canonical } from "@repo/surreal"
+
 import { generateText, Output } from "ai"
-import { Data, Effect } from "effect"
+import { Data, Duration, Effect, Schedule } from "effect"
+import path from "node:path"
 import z from "zod"
 
 import { ModelsProvider } from "../model"
 import * as CanonicalPrompt from "./canonical-qa"
+import * as FindSameCanonicalQA from "./find-same-canonical-qa"
 import * as Infographic from "./infographic"
+import * as Markdown from "./markdown"
 import * as SynthesizeGatekeeper from "./synthesize-gatekeeper"
 
 export const QASchema = z.object({
@@ -83,10 +88,27 @@ export class SaveInfographicError extends Data.TaggedError("Error/SaveInfographi
   data: { filePath: string }
 }> {}
 
+export class FindSameCanonicalQAError extends Data.TaggedError("Error/FindSameCanonicalQA")<{
+  error: unknown
+  data: {
+    newQuestion: string
+    newAnswer?: string | null
+    oldCanonicalQAs: Array<{ id: string; canonicalQuestion: string }>
+  }
+}> {}
+
+export class GenMarkdownError extends Data.TaggedError("Error/GenMarkdown")<{
+  error: unknown
+  data: { canonicalQA: Canonical.Repository.CanonicalQA }
+}> {}
+
 export class AgentService extends Effect.Service<AgentService>()("Service/Agent", {
   dependencies: [ModelsProvider.Default],
   effect: Effect.gen(function* () {
-    const { gemini2_5Flash, nanoBanana2_5Flash } = yield* ModelsProvider
+    const { gemini2_5Flash, nanoBanana3Pro } = yield* ModelsProvider
+
+    const retryN = (times: number, duration: Duration.Duration = Duration.seconds(5)) =>
+      Schedule.recurs(times).pipe(Schedule.addDelay(() => duration))
 
     const extractQA = (text: string) =>
       Effect.tryPromise({
@@ -104,18 +126,18 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
         catch: (error) => new ExtractQAError({ error, text }),
       }).pipe(Effect.map((d) => d.output.qas))
 
-    const inferTopic = (text: string) =>
-      Effect.tryPromise({
-        try: () =>
-          generateText({
-            model: gemini2_5Flash,
-            output: Output.object({ schema: TopicSchema }),
-            system:
-              "You are an expert political scientist. Categorize the text into standard policy domains.",
-            prompt: `Analyze the following text and determine the primary policy topic:\n\n${text}`,
-          }),
-        catch: (error) => new InferTopicError({ error, text }),
-      }).pipe(Effect.andThen((d) => d.output))
+    // const inferTopic = (text: string) =>
+    //   Effect.tryPromise({
+    //     try: () =>
+    //       generateText({
+    //         model: gemini2_5Flash,
+    //         output: Output.object({ schema: TopicSchema }),
+    //         system:
+    //           "You are an expert political scientist. Categorize the text into standard policy domains.",
+    //         prompt: `Analyze the following text and determine the primary policy topic:\n\n${text}`,
+    //       }),
+    //     catch: (error) => new InferTopicError({ error, text }),
+    //   }).pipe(Effect.andThen((d) => d.output))
 
     const synthesizeGatekeeper = (input: {
       newPair: { question: string; answer: string } // English
@@ -129,6 +151,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
             output: Output.object({ schema: SynthesizeGatekeeper.UpdateGatekeeperSchema }),
             system: SynthesizeGatekeeper.SYSTEM_PROMPT,
             prompt: SynthesizeGatekeeper.buildUpdateGatekeeperPrompt(input),
+            temperature: 0,
           }),
         catch: (error) => new SynthesizeGatekeeperError({ error, data: input }),
       }).pipe(Effect.andThen((d) => d.output))
@@ -168,7 +191,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
           Effect.tryPromise({
             try: () =>
               generateText({
-                model: nanoBanana2_5Flash,
+                model: nanoBanana3Pro,
                 prompt: `Create a picture of ${JSON.stringify(d)}`,
               }),
             catch: (error) =>
@@ -178,29 +201,82 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
               }),
           }),
         ),
-        Effect.tap((d) => Effect.logInfo("before img", JSON.stringify(d, null, 2))),
         Effect.andThen((d) => d.files.filter((f) => f.mediaType?.startsWith("image/"))[0]),
         Effect.andThen(Effect.fromNullable),
-        Effect.tap((d) => Effect.logInfo("after img", JSON.stringify(d, null, 2))),
-        Effect.tap((file) =>
-          Effect.tryPromise({
-            try: () => {
-              const extension = file.mediaType?.split("/")[1] || "png"
-              const filename = `image-abc.${extension}`
-              return Bun.write(filename, file.uint8Array)
-            },
-            catch: (error) =>
-              new SaveInfographicError({ error, data: { filePath: "./images/abc.png" } }),
-          }),
-        ),
+        Effect.andThen((file) => {
+          const extension = file.mediaType?.split("/")[1] || "png"
+          const filename = `${Bun.randomUUIDv7()}.${extension}`
+          return {
+            file: file.uint8Array,
+            filename,
+            extension,
+          }
+        }),
       )
+
+    const saveImage = ({
+      file,
+      filename,
+      folder,
+    }: {
+      file: Uint8Array
+      filename: string
+      extension: string
+      folder: string
+    }) => {
+      const fullpath = path.join(folder, filename)
+      return Effect.tryPromise({
+        try: async () => {
+          await Bun.write(fullpath, file)
+          return {
+            fullpath,
+            filename,
+            folder,
+          }
+        },
+        catch: (error) => new SaveInfographicError({ error, data: { filePath: fullpath } }),
+      })
+    }
+
+    const findSameCanonicalQA = (input: {
+      newQuestion: string
+      newAnswer?: string | null
+      oldCanonicalQAs: Array<{ id: string; canonicalQuestion: string }>
+    }) =>
+      Effect.tryPromise({
+        try: () =>
+          generateText({
+            model: gemini2_5Flash,
+            output: Output.object({ schema: FindSameCanonicalQA.FindSameCanonicalQASchema }),
+            system: FindSameCanonicalQA.SYSTEM_PROMPT,
+            prompt: FindSameCanonicalQA.buildUserPrompt(input),
+            temperature: 0,
+          }),
+        catch: (error) => new FindSameCanonicalQAError({ error, data: input }),
+      }).pipe(Effect.andThen((d) => d.output))
+
+    const genMarkdown = (data: Canonical.Repository.CanonicalQA) =>
+      Effect.tryPromise({
+        try: () =>
+          generateText({
+            model: gemini2_5Flash,
+            output: Output.object({ schema: Markdown.MarkdownContentSchema }),
+            system: Markdown.SYSTEM_PROMPT,
+            prompt: Markdown.buildUserPrompt(data),
+          }),
+        catch: (error) => new GenMarkdownError({ error, data: { canonicalQA: data } }),
+      }).pipe(Effect.andThen((d) => d.output))
 
     return {
       extractQA,
-      inferTopic,
+      // inferTopic,
       synthesizeCanonical,
       synthesizeGatekeeper,
       infographicAgent,
+      findSameCanonicalQA,
+      saveImage,
+      retryN,
+      genMarkdown,
     }
   }),
 }) {}

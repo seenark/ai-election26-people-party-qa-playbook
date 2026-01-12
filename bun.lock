@@ -254,7 +254,6 @@
     "packages/surreal": {
       "name": "@repo/surreal",
       "dependencies": {
-        "@repo/ai": "workspace:*",
         "effect": "^3.19.14",
         "surrealdb": "^1.3.2",
       },

@@ -64,23 +64,23 @@ export class SurrealProvider extends Effect.Service<SurrealProvider>()("Provider
       catch: (error) => new SurrealReadyError({ error }),
     })
 
-    const makeIndexForEmbedding = (
+    const makeIndexForEmbedding = <DATA extends Record<string, any>>(
       table: string,
       indexName: string,
-      column: string = "embedding",
+      column: keyof DATA,
     ) =>
       Effect.tryPromise({
         try: () =>
           db.query(
             `DEFINE INDEX ${indexName} ON TABLE ${table}
-                        FIELDS ${column} HNSW
+                        FIELDS ${String(column)} HNSW
                         DIMENSION 3072
                         DISTANCE COSINE;`,
           ),
         catch: (error) =>
           new SurrealMakeIndexForEmbeddingError({
             error,
-            data: { table, indexName, column },
+            data: { table, indexName, column: String(column) },
           }),
       })
 

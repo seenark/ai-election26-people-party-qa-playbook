@@ -33,7 +33,7 @@ export const InfographicPromptSchema = z.object({
 export const INFOGRAPHIC_SYSTEM_PROMPT = `You are a Creative Director for a political campaign.
 
 ### YOUR GOAL:
-Convert Thai Policy Synthesis JSON into a 4-6 panel Japanese-style cartoon infographic.
+Convert Thai Policy Synthesis JSON into a 4 or 6 (not 3 or 5) panel Japanese-style cartoon infographic.
 
 ### RULES:
 1. **No Mascots**: Do not include party mascots or recurring brand characters. Use generic, friendly people (citizens) or relevant scenery/objects to illustrate the policy.
