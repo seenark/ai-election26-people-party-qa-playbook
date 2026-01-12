@@ -7,11 +7,13 @@ import { createServerFn } from '@tanstack/react-start'
 const getAllMarkdowns = createServerFn().handler(async() => {
     const markdowns = await Runtime.runPromise(
             Effect.gen(function* () {
-                const markdownRepo = yield* Markdown.Repository.MarkdownRepository
+                const markdownRepo = yield* Markdown.MarkdownRepository
                 const markdowns = yield* markdownRepo.getAll
                 return markdowns
             })
         )
+
+        console.log("markdowns", markdowns)
 
         const normalized = markdowns.map((row) => ({
             ...row,

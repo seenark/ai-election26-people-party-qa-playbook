@@ -8,7 +8,6 @@ export function MarkdownRenderer({ content }: { content: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          // Headings
           h1: ({ children }) => (
             <h1 className="text-4xl font-bold text-gray-900 mt-8 mb-6 leading-tight">
               {children}
@@ -25,21 +24,18 @@ export function MarkdownRenderer({ content }: { content: string }) {
             </h3>
           ),
           
-          // Paragraphs and text
           p: ({ children }) => (
             <p className="text-base text-gray-700 leading-relaxed mb-5">
               {children}
             </p>
           ),
           
-          // Strong (bold)
           strong: ({ children }) => (
             <strong className="font-semibold text-gray-900">
               {children}
             </strong>
           ),
           
-          // Lists
           ul: ({ children }) => (
             <ul className="space-y-2 mb-6 ml-6">
               {children}
@@ -58,8 +54,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
               </span>
             </li>
           ),
-          
-          // Links
+
           a: ({ href, children }) => (
             <a 
               href={href}
@@ -71,19 +66,16 @@ export function MarkdownRenderer({ content }: { content: string }) {
             </a>
           ),
           
-          // Horizontal rule
           hr: () => (
             <hr className="my-8 border-t border-gray-200" />
           ),
           
-          // Code
           code: ({ children }) => (
             <code className="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">
               {children}
             </code>
           ),
           
-          // Blockquote
           blockquote: ({ children }) => (
             <blockquote className="border-l-4 border-gray-300 pl-4 py-2 my-6 italic text-gray-600">
               {children}

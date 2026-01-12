@@ -7,7 +7,7 @@ import { createServerFn } from '@tanstack/react-start'
 const getMarkdownById = createServerFn({ method: "GET" }).inputValidator((data: { id: string }) => data).handler(async ({ data }) => {
     const markdown = await Runtime.runPromise(
         Effect.gen(function* () {
-            const markdownRepo = yield* Markdown.Repository.MarkdownRepository
+            const markdownRepo = yield* Markdown.MarkdownRepository
 
             const markdown = yield* markdownRepo.getById(data.id)
             return markdown

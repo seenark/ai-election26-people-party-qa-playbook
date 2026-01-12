@@ -1,6 +1,6 @@
 import { Data, Effect } from "effect"
 import * as S from "effect/Schema"
-import { RecordId } from "surrealdb"
+import { StringRecordId } from "surrealdb"
 
 import { SurrealProvider } from "../surreal-provider"
 
@@ -22,7 +22,7 @@ export const MARKDOWN_TABLE_NAME_SCHEMA = S.Literal("markdowns").pipe(
 export type MARKDOWN_TABLE_NAME = typeof MARKDOWN_TABLE_NAME_SCHEMA.Type
 export const MARKDOWN_TABLE_NAME = MARKDOWN_TABLE_NAME_SCHEMA.make("markdowns")
 
-export const getMarkdownRecordId = (id: string) => new RecordId(MARKDOWN_TABLE_NAME, id)
+export const getMarkdownRecordId = (id: string) => new StringRecordId(id)
 
 export class CreateMarkdownError extends Data.TaggedError("Repository/Markdown/Create/Error")<{
   error: unknown

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Markdown } from "@repo/surreal"
 
-type MarkdownType = Markdown.Repository.Markdown
+type MarkdownType =  Markdown.Markdown
 
 export function PolicyCard({md}: {md: MarkdownType}) {
     return (
