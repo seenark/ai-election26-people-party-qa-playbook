@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "effect": "^3.19.14",
-    "surrealdb": "^1.3.2",
-    "@repo/ai": "workspace:*"
+    "surrealdb": "^1.3.2"
   }
 }

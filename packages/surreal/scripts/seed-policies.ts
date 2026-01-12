@@ -10,7 +10,7 @@ import { Runtime } from "../src/runtime"
 const seedPolicy = async (md: { filename: string; url: string }) => {
   console.log(md)
   const title = md.filename.replace(/\.md$/, "")
-  const file = await Bun.file(`../../policies/${md.filename}`).text()
+  const file = await Bun.file(`./policies/${md.filename}`).text()
   const newFile = cleanLinks(file)
   console.log("file", newFile)
 

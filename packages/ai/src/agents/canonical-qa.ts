@@ -53,12 +53,15 @@ export const PolicySynthesisSchema = z.object({
     resources: z.string().nullable().describe("Funding or resources if stated, otherwise null."),
   }),
 
-  policyLinks: z.array(
-    z.object({
-      title: z.string().describe("Policy title (Thai if source is Thai)."),
-      url: z.string().url(),
-    }),
-  ),
+  policyLinks: z
+    .array(
+      z.object({
+        title: z.string().describe("Policy title (Thai if source is Thai). (min 1, max 10)"),
+        url: z.url(),
+      }),
+    )
+    .min(1)
+    .max(10),
 
   contradictionFlags: z
     .array(
@@ -75,11 +78,7 @@ export const PolicySynthesisSchema = z.object({
     )
     .optional(),
 
-  confidenceScore: z
-    .number()
-    .min(0)
-    .max(100)
-    .describe("How you confidence about your result (0-100)"),
+  confidenceScore: z.number().min(0).max(100).describe("Your confidence level (0-100)"),
 })
 
 export const SYSTEM_PROMPT = `You are the Chief Policy Synthesis Agent for a political party.

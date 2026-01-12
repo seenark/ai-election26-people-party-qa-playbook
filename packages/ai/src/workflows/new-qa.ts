@@ -1,8 +1,10 @@
-import { Canonical, Policy, PolicyChunk } from "@repo/surreal"
+import type { EmbeddingModelV3Embedding } from "@ai-sdk/provider"
+
+import { Canonical, Policy, PolicyChunk, Markdown } from "@repo/surreal"
 import { Effect, Array as A, Option, Data } from "effect"
 
-import { AgentService } from "../agents/service"
-import { VectorService } from "../vector"
+import { AgentService, FindSameCanonicalQAError } from "../agents/service"
+import { EmbedTextError, VectorService } from "../vector"
 
 type QARaw = {
   text: string
@@ -25,6 +27,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
     Policy.Repository.PolicyRepository.Default,
     PolicyChunk.Repository.PolicyChunkRepository.Default,
     Canonical.Repository.CanonicalQARepository.Default,
+    Markdown.MarkdownRepository.Default,
   ],
   effect: Effect.gen(function* () {
     const agentSvc = yield* AgentService
@@ -32,6 +35,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
     const vectorSvc = yield* VectorService
     const policyRepo = yield* Policy.Repository.PolicyRepository
     const canonicalRepo = yield* Canonical.Repository.CanonicalQARepository
+    const markdownRepo = yield* Markdown.MarkdownRepository
 
     const searchPolicyForQA = (qa: { question: string; answer: string }) =>
       Effect.gen(function* () {
@@ -43,16 +47,64 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
         return results
       })
 
-    const askForTopic = (data: {
-      qa: QA
-      qaRaw: QARaw
-      existingTopics: string[]
-      policiesTopics: string[]
-    }) =>
-      agentSvc.inferTopic(`Question: ${data.qa.question}\nAnswer: ${data.qa.answer}
-        EXISTING TOPICS: ${data.existingTopics.join(", ")}
-        POLICIES TOPICS: ${data.policiesTopics.join(", ")}
-        `)
+    // const askForTopic = (data: {
+    //   qa: QA
+    //   qaRaw: QARaw
+    //   existingTopics: string[]
+    //   policiesTopics: string[]
+    // }) =>
+    //   agentSvc.inferTopic(`Question: ${data.qa.question}\nAnswer: ${data.qa.answer}
+    //     EXISTING TOPICS: ${data.existingTopics.join(", ")}
+    //     POLICIES TOPICS: ${data.policiesTopics.join(", ")}
+    //     `)
+
+    const findSameCanonical = (input: {
+      question: string
+      answer: string
+    }): Effect.Effect<
+      Option.Option<Omit<Canonical.Repository.CanonicalQA, "embedding">>,
+      EmbedTextError | Canonical.Repository.VectorSearchError | FindSameCanonicalQAError,
+      never
+    > =>
+      Effect.gen(function* () {
+        const qaEmbedding = yield* vectorSvc.embedText(
+          `QUESTION: ${input.question}, ANSWER: ${input.answer}`,
+        )
+
+        const top3ExistingCanonical = yield* canonicalRepo.vectorSearch(qaEmbedding, 3)
+        console.log("top3 existing", top3ExistingCanonical)
+        console.log(
+          "ids",
+          top3ExistingCanonical.map((d) => d.id.toString()),
+        )
+
+        const canonicalQaResult = yield* agentSvc.findSameCanonicalQA({
+          newQuestion: `Question: ${input.question}`,
+          newAnswer: `Answer:  ${input.answer}`,
+          oldCanonicalQAs: top3ExistingCanonical.map((d) => ({
+            canonicalQuestion: `Question: ${d.canonicalQuestion} Answer: ${d.longAnswer}`,
+            id: d.id.toString(),
+          })),
+        })
+
+        console.log("old canonical", canonicalQaResult)
+
+        if (canonicalQaResult.decision === "NEW" || canonicalQaResult.matchedId === null)
+          return Option.none()
+
+        const mostMatched = top3ExistingCanonical.find((d) => {
+          console.log(
+            d.id.toString(),
+            canonicalQaResult.matchedId,
+            d.id.toString() === canonicalQaResult.matchedId,
+          )
+          return d.id.toString() === canonicalQaResult.matchedId
+        })
+        console.log("most matched", mostMatched)
+        if (!mostMatched) return Option.none()
+
+        return Option.some(mostMatched)
+      })
 
     const singleQAWorkflow = (qa: { question: string; answer: string; raw: QARaw }) =>
       Effect.gen(function* () {
@@ -69,24 +121,19 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
         console.log("qa", qa)
         console.log("policies", policies)
 
-        const allCanonicalQAs = yield* canonicalRepo.getAll.pipe(
-          Effect.tap((d) => Effect.logInfo("all canonical", d)),
-        )
+        // const allCanonicalQAs = yield* canonicalRepo.getAll.pipe(
+        //   Effect.tap((d) => Effect.logInfo("all canonical", d)),
+        // )
 
-        const topicFromLLM = yield* askForTopic({
-          qa: {
-            question: qa.question,
-            answer: qa.answer,
-          },
-          qaRaw: qa.raw,
-          existingTopics: A.map(allCanonicalQAs, (d) => d.topic),
-          policiesTopics: policies.map((p) => p.title),
-        })
+        const oldCanonical = yield* findSameCanonical({
+          question: qa.question,
+          answer: qa.answer,
+        }).pipe(Effect.retry(agentSvc.retryN(2)))
 
-        console.log("topicFromLLM", topicFromLLM)
+        console.log("oldCanonical", oldCanonical)
 
-        const canonicalSameTopic = allCanonicalQAs.filter((d) => d.topic === topicFromLLM.topic)
-        const firstCanonicalQA = Option.fromNullable(canonicalSameTopic[0])
+        // const canonicalSameTopic = allCanonicalQAs.filter((d) => d.topic === topicFromLLM.topic)
+        // const firstCanonicalQA = Option.fromNullable(canonicalSameTopic[0])
 
         const currentPair: Canonical.Repository.QA = {
           question: qa.question,
@@ -100,14 +147,14 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
         }
 
         const allQAs = (() => {
-          return Option.match(firstCanonicalQA, {
+          return Option.match(oldCanonical, {
             onNone: () => [currentPair],
             onSome: (value) => [...value.qa, currentPair],
           })
         })()
         console.log("all qas", allQAs)
 
-        yield* Option.match(firstCanonicalQA, {
+        yield* Option.match(oldCanonical, {
           onNone: () => Effect.void,
           onSome: (value) =>
             agentSvc
@@ -124,6 +171,9 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
                 })),
               })
               .pipe(
+                Effect.retry(agentSvc.retryN(2)),
+                Effect.tap((d) => Effect.logInfo("need update?", d)),
+                // TODO: send msg to discord or line show this message qa is no need to update
                 Effect.andThen((d) => {
                   if (d.needsUpdate) return Effect.void
                   return Effect.fail(new NoNeedToUpdate())
@@ -131,30 +181,57 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
               ),
         })
 
-        const newCanonicalQA = yield* agentSvc.synthesizeCanonical({
-          qaPairs: allQAs,
-          policies: policies.map((p) => ({
-            content: p.markdown,
-            title: p.title,
-            url: p.url,
-          })),
-        })
+        const newCanonicalQA = yield* agentSvc
+          .synthesizeCanonical({
+            qaPairs: allQAs,
+            policies: policies.map((p) => ({
+              content: p.markdown,
+              title: p.title,
+              url: p.url,
+            })),
+          })
+          .pipe(Effect.retry(agentSvc.retryN(2)))
 
         console.log("new canonical qa", newCanonicalQA)
 
-        const saved = yield* Effect.gen(function* () {
-          yield* Option.match(firstCanonicalQA, {
+        yield* Effect.gen(function* () {
+          yield* Option.match(oldCanonical, {
             onNone: () => Effect.void,
             onSome: (value) => canonicalRepo.deleteById(value.id),
           })
 
-          return yield* canonicalRepo
-            .create({
-              topic: topicFromLLM.topic,
-              qa: allQAs,
-              ...newCanonicalQA,
-            })
-            .pipe(Effect.tap((value) => agentSvc.infographicAgent(JSON.stringify(value))))
+          const embedding: EmbeddingModelV3Embedding = yield* vectorSvc
+            .embedText(
+              `QUESTION: ${newCanonicalQA.canonicalQuestion}, ANSWER: ${newCanonicalQA.longAnswer}`,
+            )
+            .pipe(Effect.retry(agentSvc.retryN(2)))
+
+          // const image = yield* agentSvc
+          //   .infographicAgent(JSON.stringify(newCanonicalQA))
+          //   .pipe(Effect.retry(agentSvc.retryN(2)))
+          // const filePath = yield* agentSvc.saveImage({
+          //   ...image,
+          //   folder: "./images/",
+          // })
+
+          const saved: Canonical.Repository.CanonicalQA = yield* canonicalRepo.create({
+            embedding: embedding,
+            qa: allQAs,
+            ...newCanonicalQA,
+            imageLink: "a.png", // filePath.filename,
+          })
+
+          const markdown = yield* agentSvc.genMarkdown(saved)
+          console.log("markdown", markdown)
+
+          const markdownCreated = yield* markdownRepo.create({
+            ...markdown,
+            canonicalQAID: saved.id,
+          })
+          console.log("markdownCreated", markdownCreated)
+
+          return yield* Effect.void
+          // .pipe(Effect.tap((value) => agentSvc.infographicAgent(JSON.stringify(value))))
         })
 
         return yield* Effect.void
@@ -168,7 +245,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
     const addQAWorkflow = (qaRaw: QARaw) =>
       Effect.gen(function* () {
         console.log("qa raw", qaRaw)
-        const qaList = yield* agentSvc.extractQA(qaRaw.text)
+        const qaList = yield* agentSvc.extractQA(qaRaw.text).pipe(Effect.retry(agentSvc.retryN(2)))
         // const qaList = [
         //   {
         //     question: "เชื้อเพลิง",
@@ -176,6 +253,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
         //       "ลดการอุดหนุนเชื้อเพลิงฟอสซิล ทุกประเภท: เพื่อแสดงเจตจำนงที่จะเปลี่ยนผ่านสู่พลังงานหมุนเวียนที่เป็นธรรม",
         //   },
         // ]
+        // TODO: send msg to discord show this text can split into many qa what qa are there in the list
         console.log("qa list", qaList)
         return yield* Effect.forEach(qaList.slice(0, 1), (qa) =>
           singleQAWorkflow({ question: qa.question, answer: qa.answer, raw: qaRaw }),
