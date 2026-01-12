@@ -4,14 +4,19 @@ import { RecordId, StringRecordId } from "surrealdb";
 
 export type Markdown = {
     id: string
-    canonicalId: string
-    md: string
-    topic: string,
+    canonicalQAID: string
+    card: {
+        image: string
+        shortDescription: string
+        tags: string[]
+        title: string
+    }
+    markdown: string
 }
 
-export const MARKDOWN_TABLE_NAME_SCHEMA = S.Literal("markdown").pipe(S.brand("MARKDOWN_TABLE_NAME"))
+export const MARKDOWN_TABLE_NAME_SCHEMA = S.Literal("markdowns").pipe(S.brand("MARKDOWN_TABLE_NAME"))
 export type MARKDOWN_TABLE_NAME = typeof MARKDOWN_TABLE_NAME_SCHEMA.Type
-export const MARKDOWN_TABLE_NAME = MARKDOWN_TABLE_NAME_SCHEMA.make("markdown")
+export const MARKDOWN_TABLE_NAME = MARKDOWN_TABLE_NAME_SCHEMA.make("markdowns")
 
 const getMarkdownRecordId = (id: string) => new StringRecordId(id)
 

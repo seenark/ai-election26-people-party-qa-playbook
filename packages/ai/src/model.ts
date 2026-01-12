@@ -5,7 +5,7 @@ export class ModelsProvider extends Effect.Service<ModelsProvider>()("Provider/M
   dependencies: [],
   effect: Effect.gen(function* () {
     const google = createGoogleGenerativeAI({
-      apiKey: Bun.env.GOOGLE_API_KEY,
+      apiKey: process.env.GOOGLE_API_KEY,
     })
 
     const geminiEmbedding = google.embeddingModel("gemini-embedding-001")

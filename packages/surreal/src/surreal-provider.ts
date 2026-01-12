@@ -31,7 +31,7 @@ export class SurrealMakeColumnUniqueError extends Data.TaggedError(
 export class SurrealProvider extends Effect.Service<SurrealProvider>()("Provider/Surreal", {
   dependencies: [],
   effect: Effect.gen(function* () {
-    const url = `${Bun.env.SURREAL_URL || "ws://localhost:8888"}/rpc`
+    const url = `${process.env.SURREAL_URL || "ws://localhost:8888"}/rpc`
     const database = "election-playbook"
     const namespace = "election-playbook"
 
