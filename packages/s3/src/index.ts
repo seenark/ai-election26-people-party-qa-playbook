@@ -8,7 +8,7 @@ export class S3WriteError extends Data.TaggedError("S3/Write/Error")<{
 
 export class S3Service extends Effect.Service<S3Service>()("S3Service", {
   effect: Effect.gen(function* () {
-    const bucketName = "mybucket"
+    const bucketName = Bun.env.S3_BUCKET_NAME || "mybucket"
     const credentials = {
       accessKeyId: Bun.env.S3_KEY_ID,
       secretAccessKey: Bun.env.S3_ACCESS_KEY,
@@ -17,7 +17,7 @@ export class S3Service extends Effect.Service<S3Service>()("S3Service", {
     const s3Client = new S3Client({
       ...credentials,
       bucket: bucketName,
-      endpoint: "http://localhost:9000",
+      endpoint: Bun.env.S3_URL || "http://localhost:9000",
     })
 
     const write = (
