@@ -7,14 +7,14 @@ import { Effect, Array as A, Option, Data } from "effect"
 import { AgentService, FindSameCanonicalQAError } from "../agents/service"
 import { EmbedTextError, VectorService } from "../vector"
 
-type QARaw = {
+export type QARaw = {
   text: string
   source: string
   url: string
   speaker: string
 }
 
-type QA = {
+export type QA = {
   question: string
   answer: string
 }
@@ -270,6 +270,7 @@ export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/New
 
     return {
       addQAWorkflow,
+      singleQAWorkflow,
     }
   }),
 }) {}

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@repo/redis": "workspace:*",
+    "@repo/ai": "workspace:*",
     "bullmq": "^5.66.4",
     "effect": "^3.19.14"
   }

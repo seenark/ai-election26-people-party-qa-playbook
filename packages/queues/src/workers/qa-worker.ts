@@ -1,49 +1,33 @@
 // src/workers/qa-worker.ts
 
+import { NewQAWorkflow } from "@repo/ai"
 import { Worker, Job } from "bullmq"
+import { Effect } from "effect"
 
 import { connection } from "../connection"
-import { JOB_NAMES, QUEUE_NAMES, type LinkPoliciesAndClusterPayload } from "../names"
+import { JOB_NAMES, QUEUE_NAMES, type QAJob } from "../names"
 
 export function startQAWorker() {
   const worker = new Worker(
     QUEUE_NAMES.QA,
-    async (job: Job<LinkPoliciesAndClusterPayload>) => {
-      try {
-        console.log(`[${QUEUE_NAMES.QA}] Processing job ${job.id}`)
-        console.log(`Job name: ${job.name}`)
-        console.log(`Payload:`, job.data)
+    async (job: Job<QAJob>) => {
+      console.log(`[${QUEUE_NAMES.QA}] Processing job ${job.id}`)
+      console.log(`Job name: ${job.name}`)
+      console.log(`Payload:`, job.data)
 
-        // Validate job name
-        if (job.name !== JOB_NAMES.LINK_POLICIES_AND_CLUSTER) {
-          throw new Error(`Unknown job name: ${job.name}`)
-        }
-
-        const { qaPairId } = job.data
-        console.log(`Linking policies and clustering for Q&A pair: ${qaPairId}`)
-
-        // TODO: Implement business logic here
-        // - Fetch Q&A pair from DB
-        // - Link to policies
-        // - Assign to cluster
-        // - Enqueue job to clusterQueue
-
-        await new Promise((resolve) => setTimeout(resolve, 100)) // Simulate work
-
-        return {
-          ok: true,
-          jobName: job.name,
-          data: job.data,
-          message: `Successfully processed Q&A pair ${qaPairId}`,
-        }
-      } catch (error) {
-        console.error(`[${QUEUE_NAMES.QA}] Error processing job ${job.id}:`, error)
-        throw error
+      // Validate job name
+      if (job.name !== JOB_NAMES.QA) {
+        throw new Error(`Unknown job name: ${job.name}`)
       }
+
+      return Effect.gen(function* () {
+        const newQASvc = yield* NewQAWorkflow.NewQAWorkflow
+        yield* newQASvc.singleQAWorkflow(job.data)
+      }).pipe(Effect.provide(NewQAWorkflow.NewQAWorkflow.Default), Effect.runPromise)
     },
     {
       connection: connection,
-      concurrency: 10,
+      concurrency: 1,
     },
   )
 
