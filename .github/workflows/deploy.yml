@@ -1,0 +1,72 @@
+name: Deploy Public UI 2
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    env:
+      SURREAL_URL: ${{ secrets.SURREAL_URL }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /*
+            !policies-markdown
+          sparse-checkout-cone-mode: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -f apps/public-ui2/Dockerfile -t public-ui2 .
+          docker save public-ui2:latest > public-ui2.tar
+
+      - name: Copy image to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          port: ${{ env.DEPLOY_PORT }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          source: "public-ui2.tar"
+          target: "/home/${{ env.DEPLOY_USER }}/"
+
+      - name: Deploy container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          port: ${{ env.DEPLOY_PORT }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          script: |
+            # Stop and remove old container
+            docker container rm -f public-ui2 || true
+            docker image rm -f public-ui2:latest || true
+
+            # Load new image
+            docker load -i /home/${{ env.DEPLOY_USER }}/public-ui2.tar
+
+            # Start new container
+            docker run -d \
+              --name public-ui2 \
+              --restart unless-stopped \
+              --network web \
+              -e SURREAL_URL="${{ env.SURREAL_URL }}" \
+              public-ui2:latest
+
+            # Cleanup
+            rm /home/${{ env.DEPLOY_USER }}/public-ui2.tar
+
+            # Show status
+            docker ps | grep public-ui2
+            docker logs --tail 20 public-ui2
