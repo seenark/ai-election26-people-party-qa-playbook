@@ -60,7 +60,7 @@ jobs:
             docker run -d \
               --name public-ui2 \
               --restart unless-stopped \
-              --network web \
+              --network election \
               -e SURREAL_URL="${{ env.SURREAL_URL }}" \
               public-ui2:latest
 
