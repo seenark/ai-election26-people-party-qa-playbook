@@ -105,7 +105,7 @@ export class GenMarkdownError extends Data.TaggedError("Error/GenMarkdown")<{
 export class AgentService extends Effect.Service<AgentService>()("Service/Agent", {
   dependencies: [ModelsProvider.Default],
   effect: Effect.gen(function* () {
-    const { gemini2_5Flash, nanoBanana3Pro } = yield* ModelsProvider
+    const { gemini2_5Flash, nanoBanana3Pro, gemini3Flash } = yield* ModelsProvider
 
     const retryN = (times: number, duration: Duration.Duration = Duration.seconds(5)) =>
       Schedule.recurs(times).pipe(Schedule.addDelay(() => duration))
@@ -114,7 +114,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: QASchema }),
             system: `You are a policy analyst specializing in election data.
                 Your task is to extract Q&A pairs from transcripts.
@@ -147,7 +147,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: SynthesizeGatekeeper.UpdateGatekeeperSchema }),
             system: SynthesizeGatekeeper.SYSTEM_PROMPT,
             prompt: SynthesizeGatekeeper.buildUpdateGatekeeperPrompt(input),
@@ -163,7 +163,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: CanonicalPrompt.PolicySynthesisSchema }),
             system: CanonicalPrompt.SYSTEM_PROMPT,
             prompt: CanonicalPrompt.buildPolicySynthesisPrompt({
@@ -178,7 +178,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: Infographic.InfographicPromptSchema }),
             system: Infographic.INFOGRAPHIC_SYSTEM_PROMPT,
             prompt: Infographic.buildInfographicPrompt({ synthesizedThaiJson }),
@@ -246,7 +246,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: FindSameCanonicalQA.FindSameCanonicalQASchema }),
             system: FindSameCanonicalQA.SYSTEM_PROMPT,
             prompt: FindSameCanonicalQA.buildUserPrompt(input),
@@ -259,7 +259,7 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
       Effect.tryPromise({
         try: () =>
           generateText({
-            model: gemini2_5Flash,
+            model: gemini3Flash,
             output: Output.object({ schema: Markdown.MarkdownContentSchema }),
             system: Markdown.SYSTEM_PROMPT,
             prompt: Markdown.buildUserPrompt(data),

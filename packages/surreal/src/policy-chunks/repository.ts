@@ -89,6 +89,7 @@ export class PolicyChunkRepository extends Effect.Service<PolicyChunkRepository>
     effect: Effect.gen(function* () {
       const { db, makeIndexForEmbedding } = yield* SurrealProvider
 
+      console.log("making index of embedding for PolicyChunkRepository")
       yield* makeIndexForEmbedding(
         POLICY_CHUNK_TABLE_NAME,
         "policy_chunk_embedding_idx",

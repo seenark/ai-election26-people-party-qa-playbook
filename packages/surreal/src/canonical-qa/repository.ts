@@ -56,47 +56,6 @@ export type CanonicalQA = {
     | undefined
 }
 
-// export type CanonicalQA = {
-//   id: string
-//   qa: QA[]
-//   imageLink: string
-//   embedding: number[]
-//   canonicalQuestion: string
-//   canonicalAnswer: string
-//   persuasiveAnswer: string
-//   shortAnswer: string
-//   longAnswer: string
-//   keyPoints: string[]
-//   redLines: string[]
-//   what: {
-//     issue: string
-//     affectedGroups: string
-//   }
-//   why: {
-//     rationale: string
-//     partyPrinciple: string
-//     expectedOutcome: string
-//   }
-//   how: {
-//     actions: string[]
-//     timeline: string | null
-//     resources: string | null
-//   }
-//   policyLinks: {
-//     title: string
-//     url: string
-//   }[]
-//   confidenceScore: number
-//   contradictionFlags?:
-//     | {
-//         issue: string
-//         conflictingSources: string[]
-//         severity: "minor" | "major" | "critical"
-//         guidanceForCandidates: string
-//       }[]
-//     | undefined
-// }
-
 export const CANONICAL_QA_TABLE_NAME_SCHEMA = S.Literal("Canonical_QAs").pipe(
   S.brand("CANONICAL_QA_TABLE_NAME"),
 )
@@ -160,12 +119,7 @@ export class CanonicalQARepository extends Effect.Service<CanonicalQARepository>
     effect: Effect.gen(function* () {
       const { db, makeIndexForEmbedding } = yield* SurrealProvider
 
-      // yield* makeColumnUnique<CanonicalQA>(CANONICAL_QA_TABLE_NAME, "topic_idx", "topic").pipe(
-      //   Effect.catchTag("Provider/Surreal/MakeColumnUnique/Error", (error) =>
-      //     Effect.logWarning("error", error),
-      //   ),
-      // )
-
+      console.log("making index for embedding for CanonicalQARepository")
       yield* makeIndexForEmbedding<CanonicalQA>(
         CANONICAL_QA_TABLE_NAME,
         "canonical_embedding_idx",

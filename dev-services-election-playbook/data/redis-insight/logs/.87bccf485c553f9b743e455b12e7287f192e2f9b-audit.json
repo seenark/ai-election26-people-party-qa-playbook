@@ -1,0 +1,16 @@
+{
+    "keepSettings": {
+        "type": 1,
+        "amount": 7
+    },
+    "auditFilename": "/data/logs/.87bccf485c553f9b743e455b12e7287f192e2f9b-audit.json",
+    "hashType": "sha256",
+    "extension": "",
+    "files": [
+        {
+            "date": 1768363439455,
+            "name": "/data/logs/redisinsight-errors-2026-01-14.log.0",
+            "hash": "f006fbb15a22a5ad59079ce2838f6dbcd0d3f889811a006e6ce802e499d27305"
+        }
+    ]
+}

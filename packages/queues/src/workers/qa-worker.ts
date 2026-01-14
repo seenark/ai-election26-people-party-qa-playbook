@@ -2,7 +2,7 @@
 
 import { NewQAWorkflow } from "@repo/ai"
 import { Worker, Job } from "bullmq"
-import { Effect } from "effect"
+import { Effect, Logger } from "effect"
 
 import { connection } from "../connection"
 import { JOB_NAMES, QUEUE_NAMES, type QAJob } from "../names"
@@ -22,12 +22,19 @@ export function startQAWorker() {
 
       return Effect.gen(function* () {
         const newQASvc = yield* NewQAWorkflow.NewQAWorkflow
-        yield* newQASvc.singleQAWorkflow(job.data)
-      }).pipe(Effect.provide(NewQAWorkflow.NewQAWorkflow.Default), Effect.runPromise)
+        yield* newQASvc
+          .singleQAWorkflow(job.data)
+          .pipe(Effect.tapError((error) => Effect.logError("single qa workflow error:", error)))
+      }).pipe(
+        Effect.provide(NewQAWorkflow.NewQAWorkflow.Default),
+        Effect.provide(Logger.structured),
+        Effect.runPromise,
+      )
     },
     {
       connection: connection,
       concurrency: 1,
+      lockDuration: 600000, // 10 minutes
     },
   )
 

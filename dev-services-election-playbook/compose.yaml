@@ -77,6 +77,26 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    environment:
+      - RI_APP_PORT=5540
+      - RI_APP_HOST=0.0.0.0
+      # - RI_PROXY_PATH=use when do reverse proxy
+      - RI_REDIS_HOST=redis
+      - RI_REDIS_PORT=6379
+    # - RI_REDIS_USERNAME=
+    # - RI_REDIS_PASSWORD=
+    ports:
+      - 5540:5540
+    volumes:
+      - ./data/redis-insight:/data
+    healthcheck:
+      test: [CMD, curl, --fail, http://localhost:5540/api/health]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
