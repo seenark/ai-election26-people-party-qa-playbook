@@ -20,4 +20,6 @@ RUN  bun run turbo build
 FROM joseluisq/static-web-server:2 AS final
 COPY --from=build /app/apps/admin/dist /dist
 
+EXPOSE 3002
+
 CMD ["--port", "3002", "--root", "/dist"]
