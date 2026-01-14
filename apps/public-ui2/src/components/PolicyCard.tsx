@@ -39,7 +39,7 @@ export function PolicyCard({md}: {md: MarkdownType}) {
         
                             <div className='flex items-center justify-between pt-4 border-t border-slate-700/50'>
                               <span className='text-sm font-medium text-slate-300 group-hover:text-[#FF6713] transition-colors'>
-                                View details
+              ดูรายละเอียด
                               </span>
                               <div className='flex items-center justify-center w-8 h-8 rounded-full bg-slate-800/50 group-hover:bg-[#FF6713]/20 transition-all'>
                                 <svg 
