@@ -35,5 +35,7 @@
 LICENSE
 README.md
 
-/policies-markdown
+policies-markdown
 **/out
+policies-meta
+dev-services-election-playbook
