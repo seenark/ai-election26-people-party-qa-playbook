@@ -6,3 +6,6 @@ seedpolicies:
 
 dev-public-ui2:
 	cd apps/public-ui2 && bun --env-file ../../envs/.env --bun dev
+
+qa-worker-docker:
+	bun x turbo prune qa-worker --docker

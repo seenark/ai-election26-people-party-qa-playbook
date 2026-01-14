@@ -28,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 const newSourceSchema = z.object({
   source: z.string().min(1, "Source is required"),
-  text: z.string().default(""),
+  text: z.string(),
   url: z.string().min(1, "URL is required").url("Invalid URL format"),
   speaker: z.string().min(1, "Speaker is required"),
 })
@@ -77,7 +77,7 @@ function NewSourcePage() {
         throw new Error(`API error: ${response.status} ${response.statusText}`)
       }
 
-      const result = await response.json()
+      const result = (await response.json()) as { question: string; answer: string }[]
 
       toast.dismiss(loadingToast)
       toast.success("Source processed successfully!", {
