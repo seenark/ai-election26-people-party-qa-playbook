@@ -4,6 +4,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/deploy-qa-worker.yaml
       - packages/ai/**
       - packages/queues/**
       - packages/redis/**

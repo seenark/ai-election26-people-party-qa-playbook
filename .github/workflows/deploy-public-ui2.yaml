@@ -4,6 +4,7 @@ on:
     branches:
       - main
     paths:
+      - .github/workflows/deploy-public-ui2.yaml
       - apps/public-ui2/**
       - packages/surreal/**
   workflow_dispatch:
