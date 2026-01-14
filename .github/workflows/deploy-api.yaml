@@ -1,0 +1,91 @@
+name: Deploy QA Woker
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/ai/**
+      - packages/queues/**
+      - packages/redis/**
+      - packages/s3/**
+      - packages/surreal/**
+      - apps/api/**
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    env:
+      SURREAL_URL: ${{ secrets.SURREAL_URL }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      S3_KEY_ID: ${{ secrets.S3_KEY_ID }}
+      S3_ACCESS_KEY: ${{ secrets.S3_ACCESS_KEY }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      S3_URL: ${{ secrets.S3_URL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /*
+            !policies-markdown
+          sparse-checkout-cone-mode: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t qaworker -f apps/qa-worker/Dockerfile .
+          docker save qaworker:latest > qaworker.tar
+
+      - name: Copy image to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          port: ${{ env.DEPLOY_PORT }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          source: "qaworker.tar"
+          target: "/home/${{ env.DEPLOY_USER }}/"
+
+      - name: Deploy container
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          port: ${{ env.DEPLOY_PORT }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          script: |
+            # Stop and remove old container
+            docker container rm -f qaworker || true
+            docker image rm -f qaworker:latest || true
+
+            # Load new image
+            docker load -i /home/${{ env.DEPLOY_USER }}/qaworker.tar
+
+            # Start new container
+            docker run -d \
+              --name qaworker \
+              --restart unless-stopped \
+              --network election \
+              -e SURREAL_URL="${{ env.SURREAL_URL }}" \
+              -e S3_KEY_ID="${{ env.S3_KEY_ID }}" \
+              -e S3_ACCESS_KEY="${{ env.S3_ACCESS_KEY }}" \
+              -e S3_BUCKET_NAME="${{ env.S3_BUCKET_NAME }}" \
+              -e S3_URL="${{ env.S3_URL }}" \
+              -e REDIS_URL="${{ env.REDIS_URL }}" \
+              -e GOOGLE_GENERATIVE_AI_API_KEY="${{ env.GOOGLE_GENERATIVE_AI_API_KEY }}" \
+              qaworker:latest
+
+            # Cleanup
+            rm /home/${{ env.DEPLOY_USER }}/qaworker.tar
+
+            # Show status
+            docker ps | grep qaworker
+            docker logs --tail 20 qaworker
