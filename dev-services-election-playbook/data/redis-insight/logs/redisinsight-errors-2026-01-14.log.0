@@ -1,0 +1,33 @@
+1/14/2026, 4:03:59 AM | ERROR | KeytarEncryptionStrategy | Failed to initialize keytar module | {
+  error: {
+    type: 'Error',
+    message: 'Error loading shared library libsecret-1.so.0: No such file or directory (needed by /usr/src/app/redisinsight/api/node_modules/keytar/build/Release/keytar.node)',
+    stack: undefined,
+    cause: undefined
+  },
+  data: undefined
+}
+1/14/2026, 4:04:11 AM | ERROR | PluginService | Error when trying to process plugin common | {
+  error: undefined,
+  data: [
+    [
+      {
+        target: { main: './index.js', name: 'common', visualizations: [] },
+        value: '[Circular]',
+        property: 'visualizations',
+        children: [],
+        constraints: { arrayNotEmpty: 'visualizations should not be empty' }
+      }
+    ]
+  ]
+}
+1/14/2026, 4:04:11 AM | ERROR | LocalDatabaseSettingsRepository | Database settings item with id:0 was not Found | {
+  error: undefined,
+  sessionMetadata: {
+    data: { data: {} },
+    userId: '1',
+    sessionId: '1',
+    correlationId: 'c8e5c516-c0e2-47e5-ba6b-f31647038ba3'
+  },
+  data: undefined
+}

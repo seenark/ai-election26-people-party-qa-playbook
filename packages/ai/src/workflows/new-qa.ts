@@ -23,11 +23,11 @@ export class NoNeedToUpdate extends Data.TaggedError("NoNeedToUpdate") {}
 
 export class NewQAWorkflow extends Effect.Service<NewQAWorkflow>()("Workflow/NewQA", {
   dependencies: [
-    AgentService.Default,
-    VectorService.Default,
     Policy.Repository.PolicyRepository.Default,
     PolicyChunk.Repository.PolicyChunkRepository.Default,
     Canonical.Repository.CanonicalQARepository.Default,
+    AgentService.Default,
+    VectorService.Default,
     Markdown.MarkdownRepository.Default,
     S3Service.Default,
   ],

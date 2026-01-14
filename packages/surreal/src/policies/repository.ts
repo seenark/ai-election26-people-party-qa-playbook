@@ -70,6 +70,7 @@ export class PolicyRepository extends Effect.Service<PolicyRepository>()("Reposi
 
     const makeTitleUnique = makeColumnUnique<Policy>(POLICY_TABLE_NAME, "title_idx", "title")
 
+    console.log("making index of column title for PolicyRepository")
     yield* makeTitleUnique.pipe(
       Effect.catchTag("Provider/Surreal/MakeColumnUnique/Error", () =>
         Effect.logWarning("column title already unique"),

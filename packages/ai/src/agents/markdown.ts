@@ -42,6 +42,13 @@ export const MARKDOWN_TEMPLATE = `
 - {{questionTag3}}
 - {{questionTag4}}
 
+### 📢 แนวทางการสื่อสาร (Quick Response)
+> **การตอบแบบสั้น (Short Answer):**
+> {{shortAnswer}}
+
+> **การสื่อสารเชิงโน้มน้าว (Persuasive Message):**
+> {{persuasiveAnswer}}
+
 ---
 
 ### 💡 สรุปคำตอบเชิงกลยุทธ์
@@ -71,131 +78,70 @@ export const MARKDOWN_TEMPLATE = `
 **กรอบเวลาดำเนินการ:**
 {{timeline}}
 
-### 📢 แนวทางการสื่อสาร
-> **การตอบแบบสั้น (Short Answer):**
-> {{shortAnswer}}
+### 📂 ที่มาและแหล่งอ้างอิง (Sources)
+{{sourceLinks}}
 
-> **การสื่อสารเชิงโน้มน้าว (Persuasive Message):**
-> {{persuasiveAnswer}}
-
-### 🔗 ข้อมูลเพิ่มเติมและอ้างอิง
+### 🔗 ข้อมูลเพิ่มเติม
 {{policyLinks}}
 `
 
 export const SYSTEM_PROMPT = `
-You are a Senior Campaign Strategist and Debate Coach for a major political party.
+You are a Senior Campaign Strategist and Debate Coach.
 
 CRITICAL GOAL:
-Your job is to prepare the candidate for high-pressure media interviews and voter town halls. The content must be "Candidate-Ready" and strategic.
+The candidate needs to know "What to say" IMMEDIATELY. The top of the document is the most critical.
 
 OUTPUT RULES:
-1. LANGUAGE: ALL output must be in Thai.
-2. TITLE: The title must be a "Stunning Question." It should be provocative, urgent, or a "hard truth" that makes the candidate realize they need to be prepared.
-3. TAGS AS TOUGH QUESTIONS: Generate 3-4 realistic, difficult questions that voters or journalists would actually ask. These must be used as 'tags' in the JSON and also listed at the top of the Markdown.
-4. SECTION HEADING: Use "แนวทางการสื่อสาร" for the messaging section.
-5. NO DISCLAIMERS: Do not include any footnotes, "additional measures" notes, or disclaimers.
-6. IMAGE: Use the provided imageLink exactly as a Markdown image at the very top.
-7. MARKDOWN STRUCTURE: Follow the template exactly in this order:
-   - Image
-   - Stunning Question Title
-   - Tough Questions Section (Tags)
-   - Strategic Summary
-   - Key Points
-   - Problem (What)
-   - Expected Outcomes (Why)
-   - Policy Actions (How)
-   - Resources & Timeline
-   - Communication Guidelines
-   - Policy Links
-
-CARD DATA RULES:
-- Title: A stunning question, ≤80 characters
-- Short Description: Solution-focused summary, ≤150 characters
-- Tags: 3-4 tough questions voters/media might ask
-- Image: Use the provided imageLink exactly
+1. LANGUAGE: Thai only.
+2. STRUCTURE: Follow the template exactly. The "Communication Guidelines" (แนวทางการสื่อสาร) MUST appear immediately after the "Tough Questions" (คำถามท้าทาย).
+3. MARKDOWN QUALITY: Use proper spacing. Ensure a blank line exists before and after every header (###) and blockquote (>).
+4. SOURCES: In the "ที่มาและแหล่งอ้างอิง" section, list the specific platforms (YouTube, Facebook, etc.) and URLs provided in the data.
+5. NO INTRO: Start the markdown field directly with the image tag.
 
 CONTENT RULES:
-- Be accurate and grounded only in the input data
-- Do NOT invent numbers, budgets, or timelines
-- Maintain strategic, authoritative, and urgent tone
-- Do NOT compare with other parties
-- Do NOT use "ฟรี" unless explicitly stated
-- Do NOT guarantee outcomes beyond stated expectations
+- Use an authoritative, urgent, and strategic tone.
+- Do not invent data. If resources or timelines are not provided, state "อยู่ระหว่างการจัดสรร" or "ตามแผนงานพรรค".
+- Ensure the "Stunning Question" title is high-impact.
 
-RED LINE COMPLIANCE:
-- Only use data explicitly provided
-- No fabrication or inference
-- No competitor mentions
-- No overpromising
-
-TONE:
-Strategic, authoritative, and urgent. Focus on "Winning the Argument" while staying strictly grounded in the provided policy facts.
-
-Your output must strictly follow the JSON schema with both 'markdown' and 'card' fields.
+Your output must be a valid JSON object with 'markdown' and 'card' fields.
 `
 
 export function buildUserPrompt(data: Canonical.Repository.CanonicalQA): string {
   return `
-Generate a complete policy briefing package containing:
-1. Full markdown content for election candidates
-2. Homepage card data for website display
-
-This content will be read by election candidates and senior campaign staff.
-Clarity and structure are more important than rhetorical flourish.
-
-### MARKDOWN TEMPLATE TO FOLLOW:
-${MARKDOWN_TEMPLATE}
+Generate a policy briefing package for a candidate.
 
 ### POLICY DATA:
-
-**Canonical Question:**
-${data.canonicalQuestion}
-
-**Canonical Answer:**
-${data.canonicalAnswer}
+**Question/Answer:** ${data.canonicalQuestion} | ${data.canonicalAnswer}
 
 **Key Points:**
-${data.keyPoints.map((point, i) => `${i + 1}. ${point}`).join("\n")}
+${data.keyPoints.map((p, i) => `${i + 1}. ${p}`).join("\n")}
 
-**Problem (What):**
+**Context:**
 - Issue: ${data.what.issue}
-- Affected Groups: ${data.what.affectedGroups}
+- Affected: ${data.what.affectedGroups}
+- Outcome: ${data.why.expectedOutcome}
 
-**Rationale (Why):**
-- Rationale: ${data.why.rationale}
-- Party Principle: ${data.why.partyPrinciple}
-- Expected Outcome: ${data.why.expectedOutcome}
+**Execution:**
+- Actions: ${data.how.actions.join(", ")}
+- Resources: ${data.how.resources}
+- Timeline: ${data.how.timeline}
 
-**Actions (How):**
-${data.how.actions.map((action, i) => `${i + 1}. ${action}`).join("\n")}
+**Messaging:**
+- Short: ${data.shortAnswer}
+- Persuasive: ${data.persuasiveAnswer}
 
-**Resources:**
-${data.how.resources}
+**Sources to Cite:**
+${data.qa.map((q) => `- [${q.source.toUpperCase()}](${q.url})`).join("\n")}
 
-**Timeline:**
-${data.how.timeline}
+**Links:**
+${data.policyLinks.map((l) => `- [${l.title}](${l.url})`).join("\n")}
 
-**Communication Points:**
-- Short Answer: ${data.shortAnswer}
-- Long Answer: ${data.longAnswer}
-- Persuasive Answer: ${data.persuasiveAnswer}
+**Image:** ${data.imageLink}
 
-**Policy Links:**
-${data.policyLinks.map((link) => `- [${link.title}](${link.url})`).join("\n")}
+### MARKDOWN TEMPLATE:
+${MARKDOWN_TEMPLATE}
 
-**Red Lines (DO NOT VIOLATE):**
-${data.redLines.map((line, i) => `${i + 1}. ${line}`).join("\n")}
-
-**Image:**
-${data.imageLink || "No image provided"}
-
----
-
-OUTPUT REQUIREMENTS:
-1. 'markdown' field: Complete markdown following the template above
-2. 'card' field: Must include a stunning question as title and tough questions as tags
-3. Language: Thai only
-4. Strict compliance with red lines
-5. The "Tough Questions" section must appear at the top of the markdown, right after the title
+### FINAL INSTRUCTION:
+Ensure the 'markdown' field is a single string with correct Thai phrasing and follows the template order exactly.
 `
 }

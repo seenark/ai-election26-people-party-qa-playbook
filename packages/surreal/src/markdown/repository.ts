@@ -91,9 +91,9 @@ export class MarkdownRepository extends Effect.Service<MarkdownRepository>()(
         })
 
       const getAll = Effect.tryPromise({
-        try: () => db.select<Markdown>(MARKDOWN_TABLE_NAME),
+        try: () => db.query<[Markdown[]]>("SELECT * from markdowns ORDER BY id DESC;"),
         catch: (error) => new GetAllMarkdownsError({ error }),
-      })
+      }).pipe(Effect.andThen((d) => d[0]))
 
       const getById = (id: string) =>
         Effect.tryPromise({
