@@ -42,7 +42,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t api -f apps/qa-worker/Dockerfile .
+          docker build -t api -f apps/api/Dockerfile .
           docker save api:latest > api.tar
 
       - name: Copy image to server
