@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import remarkAlert from "remark-github-blockquote-alert"
+// import remarkAlert from "remark-github-blockquote-alert"
 // import { TypographyH1, TypographyP } from "@/components/ui/typography";
 
 export function MarkdownRenderer({ content }: { content: string }) {
