@@ -1,8 +1,9 @@
-import { PolicyCard } from '@/components/PolicyCard'
-import { Markdown, Runtime } from '@repo/surreal'
-import { createFileRoute } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
-import { Effect } from 'effect'
+import { Markdown, Runtime } from "@repo/surreal"
+import { createFileRoute } from "@tanstack/react-router"
+import { createServerFn } from "@tanstack/react-start"
+import { Effect } from "effect"
+
+import { PolicyCard } from "@/components/PolicyCard"
 
 const getAllMarkdowns = createServerFn().handler(async () => {
   const markdowns = await Runtime.runPromise(
@@ -22,13 +23,12 @@ const getAllMarkdowns = createServerFn().handler(async () => {
   return normalized
 })
 
-
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   loader: async () => {
     const data = await getAllMarkdowns()
     return { data }
   },
-  component: App
+  component: App,
 })
 
 function App() {
@@ -44,14 +44,21 @@ function App() {
           {/* Page Header with enhanced styling */}
           <div className="mb-12">
             <div className="inline-block mb-4">
-              {/* <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-[#FF6713]/10 text-[#FF6713] border border-[#FF6713]/20">
-                Policy
-              </span> */}
+              <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                เว็บไซต์ไม่เป็นทางการ
+              </span>
             </div>
             <h1 className="text-5xl font-bold mb-3 text-white bg-clip-text">ประเด็นที่ถูกถาม</h1>
-            <p className="text-lg text-slate-300 max-w-2xl">
-              ดูประเด็นที่ถูกตั้งคำถามทั้งหมดได้ที่นี่
-            </p>
+            <p className="text-lg text-slate-300 max-w-2xl">ดูประเด็นที่ถูกตั้งคำถามทั้งหมดได้ที่นี่</p>
+
+            {/* Unofficial disclaimer */}
+            <div className="mt-4 p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 max-w-2xl">
+              <p className="text-sm text-slate-400">
+                <span className="font-medium text-slate-300">หมายเหตุ:</span>{" "}
+                เว็บไซต์นี้ไม่ได้เป็นทางการจากพรรคประชาชน จัดทำขึ้นโดยอิสระเพื่อรวบรวมข้อมูลและประเด็นต่างๆ
+                ให้กับประชาชน
+              </p>
+            </div>
 
             {/* Stats bar */}
             <div className="flex items-center gap-6 mt-6 text-sm">
@@ -59,10 +66,6 @@ function App() {
                 <div className="w-2 h-2 rounded-full bg-[#FF6713]" />
                 <span className="text-slate-400">{data.length} ประเด็น</span>
               </div>
-              {/* <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span className="text-slate-400">Verified Content</span>
-              </div> */}
             </div>
           </div>
 
