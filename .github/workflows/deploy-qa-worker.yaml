@@ -4,12 +4,12 @@ on:
     branches:
       - main
     paths:
-      - packages/ai
-      - packages/queues
-      - packages/redis
-      - packages/s3
-      - packages/surreal
-      - apps/qa-worker
+      - packages/ai/**
+      - packages/queues/**
+      - packages/redis/**
+      - packages/s3/**
+      - packages/surreal/**
+      - apps/qa-worker/**
   workflow_dispatch:
 
 jobs:
