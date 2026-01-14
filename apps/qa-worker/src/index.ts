@@ -6,4 +6,5 @@ console.log(`
     8b wd8  dPwwYb       YbdPYbdP   8' .8 88b  8.dP' 8P
     \`Y88Pw dP    Yb       YP  YP    \`Y8P' 8 Yb \`Y88P 8
     `)
+console.log("all envs", Bun.env)
 Workers.startQAWorker()
