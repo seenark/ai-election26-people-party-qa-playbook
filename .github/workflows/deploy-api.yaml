@@ -41,8 +41,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t qaworker -f apps/qa-worker/Dockerfile .
-          docker save qaworker:latest > qaworker.tar
+          docker build -t api -f apps/qa-worker/Dockerfile .
+          docker save api:latest > api.tar
 
       - name: Copy image to server
         uses: appleboy/scp-action@v0.1.7
@@ -51,7 +51,7 @@ jobs:
           port: ${{ env.DEPLOY_PORT }}
           username: ${{ env.DEPLOY_USER }}
           key: ${{ env.SSH_PRIVATE_KEY }}
-          source: "qaworker.tar"
+          source: "api.tar"
           target: "/home/${{ env.DEPLOY_USER }}/"
 
       - name: Deploy container
@@ -63,15 +63,15 @@ jobs:
           key: ${{ env.SSH_PRIVATE_KEY }}
           script: |
             # Stop and remove old container
-            docker container rm -f qaworker || true
-            docker image rm -f qaworker:latest || true
+            docker container rm -f api || true
+            docker image rm -f api:latest || true
 
             # Load new image
-            docker load -i /home/${{ env.DEPLOY_USER }}/qaworker.tar
+            docker load -i /home/${{ env.DEPLOY_USER }}/api.tar
 
             # Start new container
             docker run -d \
-              --name qaworker \
+              --name api \
               --restart unless-stopped \
               --network election \
               -e SURREAL_URL="${{ env.SURREAL_URL }}" \
@@ -81,11 +81,11 @@ jobs:
               -e S3_URL="${{ env.S3_URL }}" \
               -e REDIS_URL="${{ env.REDIS_URL }}" \
               -e GOOGLE_GENERATIVE_AI_API_KEY="${{ env.GOOGLE_GENERATIVE_AI_API_KEY }}" \
-              qaworker:latest
+              api:latest
 
             # Cleanup
-            rm /home/${{ env.DEPLOY_USER }}/qaworker.tar
+            rm /home/${{ env.DEPLOY_USER }}/api.tar
 
             # Show status
-            docker ps | grep qaworker
-            docker logs --tail 20 qaworker
+            docker ps | grep api
+            docker logs --tail 20 api
