@@ -1,20 +1,20 @@
-FROM oven/bun:1-alpine AS builder
-
+FROM oven/bun AS base
 WORKDIR /app
+RUN bun i -g turbo@2.7.2
 
-COPY ../.. .
-
-RUN bun install
-
-WORKDIR /app/apps/public-ui2
-RUN bun run build
-
-FROM oven/bun:1-alpine AS runner
-
+FROM base AS turbo-prune
 WORKDIR /app
+COPY . .
+RUN bun x turbo prune public-ui2 --docker
 
-COPY --from=builder /app/apps/public-ui2/.output ./.output
+FROM base AS build
+COPY --from=turbo-prune /app/out/json/ .
+RUN bun i
+COPY --from=turbo-prune /app/out/full/ .
+RUN bun turbo build
 
-EXPOSE 3000
+FROM oven/bun:1-alpine AS final
+WORKDIR /app
+COPY --from=build /app/apps/public-ui2/.output/ .
 
-CMD ["bun", ".output/server/index.mjs"]
+CMD [ "bun", "/app/server/index.mjs" ]
