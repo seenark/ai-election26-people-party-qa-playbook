@@ -58,8 +58,9 @@ function NewSourcePage() {
       const loadingToast = toast.loading("Processing source...", {
         description: "Extracting Q&A pairs from the source",
       })
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3001"
 
-      const response = await fetch("http://localhost:3001/new-source", {
+      const response = await fetch(`${baseUrl}/new-source`, {
         method: "POST",
         headers: {
           Accept: "*/*",
