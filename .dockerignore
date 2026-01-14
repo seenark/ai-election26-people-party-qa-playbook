@@ -35,5 +35,6 @@
 LICENSE
 README.md
 
-/policies
+policies-markdown
 **/out
+policies-meta

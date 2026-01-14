@@ -4,12 +4,12 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --env-file ../../envs/.env --watch src/index.ts"
+    "dev": "bun --env-file ../../envs/.env --watch src/index.ts",
+    "build": "bun build.ts"
   },
-  "dependencies": {
-    "@repo/queues": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@repo/queues": "workspace:*",
     "@types/bun": "latest"
   },
   "peerDependencies": {
