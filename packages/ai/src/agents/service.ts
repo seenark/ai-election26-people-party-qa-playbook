@@ -3,47 +3,14 @@ import type { Canonical } from "@repo/surreal"
 import { generateText, Output } from "ai"
 import { Data, Duration, Effect, Schedule } from "effect"
 import path from "node:path"
-import z from "zod"
 
 import { ModelsProvider } from "../model"
 import * as CanonicalPrompt from "./canonical-qa"
+import * as ExtractQA from "./extract-qa"
 import * as FindSameCanonicalQA from "./find-same-canonical-qa"
 import * as Infographic from "./infographic"
 import * as Markdown from "./markdown"
 import * as SynthesizeGatekeeper from "./synthesize-gatekeeper"
-
-export const QASchema = z.object({
-  qas: z.array(
-    z
-      .object({
-        question: z
-          .string()
-          .describe(
-            "A clear, concise question that the text answers. If the question was implied, reconstruct it to be self-contained.",
-          ),
-        answer: z
-          .string()
-          .describe(
-            "The complete, factual answer extracted from the text. Maintain the original tone and specific details.",
-          ),
-      })
-      .describe("An array of extracted question and answer pairs."),
-  ),
-})
-
-export const TopicSchema = z.object({
-  topic: z
-    .string()
-    .describe(
-      "The high-level policy category (e.g., Education, Economy, Healthcare, Environment).",
-    ),
-  confidence: z
-    .number()
-    .min(0)
-    .max(1)
-    .describe("A score from 0 to 1 representing how certain you are about this categorization."),
-  reasoning: z.string().describe("A brief explanation of why this text belongs to this topic."),
-})
 
 export class ExtractQAError extends Data.TaggedError("Error/ExtractQA")<{
   error: unknown
@@ -115,13 +82,9 @@ export class AgentService extends Effect.Service<AgentService>()("Service/Agent"
         try: () =>
           generateText({
             model: gemini3Flash,
-            output: Output.object({ schema: QASchema }),
-            system: `You are a policy analyst specializing in election data.
-                Your task is to extract Q&A pairs from transcripts.
-                - If the text is a monologue or only contains answers, you MUST generate the most likely question that would lead to that answer.
-                - Ensure questions are neutral and answers are comprehensive.
-                - Do not include conversational filler (e.g., "uhm", "well").`,
-            prompt: `Extract all meaningful Q&A pairs from this text:\n\n${text}`,
+            output: Output.object({ schema: ExtractQA.QASchema }),
+            system: ExtractQA.SYSTEM_PROMPT,
+            prompt: ExtractQA.buildUserPrompt(text),
           }),
         catch: (error) => new ExtractQAError({ error, text }),
       }).pipe(Effect.map((d) => d.output.qas))
