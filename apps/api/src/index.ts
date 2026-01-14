@@ -57,4 +57,10 @@ const app = new Elysia()
   .get("/", () => "Hello Elysia")
   .listen(3001)
 
+console.log(`
+    ___   ___  ____
+   / _ | / _ \\/  _/
+  / __ |/ ___// /
+ /_/ |_/_/  /___/
+    `)
 console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
