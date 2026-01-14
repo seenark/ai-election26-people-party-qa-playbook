@@ -172,10 +172,7 @@ export class PolicyChunkRepository extends Effect.Service<PolicyChunkRepository>
             return db.query<[Omit<PolicyChunk, "embedding">[]]>(sql, { query_vec: queryVector })
           },
           catch: (error) => new VectorSearchPolicyChunkError({ error, data: { queryVector } }),
-        }).pipe(
-          Effect.tap((d) => Effect.logInfo("vector result", d)),
-          Effect.andThen((d) => d[0]),
-        )
+        }).pipe(Effect.andThen((d) => d[0]))
 
       return {
         create,

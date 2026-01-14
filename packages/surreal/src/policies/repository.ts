@@ -137,7 +137,6 @@ export class PolicyRepository extends Effect.Service<PolicyRepository>()("Reposi
           ),
         catch: (error) => new GetPolicyByTitleError({ error, title }),
       }).pipe(
-        Effect.tap((d) => Effect.logInfo("select by title", d)),
         Effect.tapError((d) => Effect.logInfo("ERROR select by title", d)),
         Effect.andThen((d) => d[0][0]),
         Effect.andThen(Effect.fromNullable),
@@ -163,7 +162,6 @@ export class PolicyRepository extends Effect.Service<PolicyRepository>()("Reposi
           ),
         catch: (error) => new UpsertPolicyError({ error, data }),
       }).pipe(
-        Effect.tap((d) => Effect.logInfo("upsert", d)),
         Effect.andThen((d) => d[0][0]),
         Effect.andThen(Effect.fromNullable),
       )

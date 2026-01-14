@@ -183,10 +183,7 @@ export class CanonicalQARepository extends Effect.Service<CanonicalQARepository>
             return db.query<[Omit<CanonicalQA, "embedding">[]]>(sql, { query_vec: queryVector })
           },
           catch: (error) => new VectorSearchError({ error, data: { queryVector, limit } }),
-        }).pipe(
-          Effect.tap((d) => Effect.logInfo("vector result", d)),
-          Effect.andThen((d) => d[0]),
-        )
+        }).pipe(Effect.andThen((d) => d[0]))
 
       return {
         create,
