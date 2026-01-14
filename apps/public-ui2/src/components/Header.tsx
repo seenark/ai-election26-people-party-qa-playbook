@@ -8,7 +8,7 @@ export default function Header() {
         <h1 className="ml-4 text-2xl md:text-3xl font-bold text-[#212937]">
           <Link to="/" className="flex gap-2 items-center">
             <img src="/logo.ico" alt="Logo" className="h-10 md:h-12" />
-            Election Playbook (Fan made)
+            AI Election Playbook (Fan made)
           </Link>
         </h1>
       </header>
