@@ -1,4 +1,4 @@
-name: Deploy QA Woker
+name: Deploy API
 on:
   push:
     branches:
