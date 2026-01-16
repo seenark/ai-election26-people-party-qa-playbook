@@ -24,6 +24,14 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 
 const newSourceSchema = z.object({
@@ -41,6 +49,7 @@ export const Route = createFileRoute("/")({
 
 function NewSourcePage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [qaPairs, setQaPairs] = useState<{ question: string; answer: string }[]>([])
 
   const form = useForm<NewSourceFormValues>({
     resolver: zodResolver(newSourceSchema),
@@ -85,7 +94,8 @@ function NewSourcePage() {
         description: `Extracted ${result.length} Q&A pairs`,
       })
 
-      form.reset()
+      setQaPairs(result)
+      form.setValue("text", "")
     } catch (error) {
       console.error("Submission error:", error)
 
@@ -198,6 +208,37 @@ function NewSourcePage() {
             </Button>
           </CardFooter>
         </Card>
+
+        {qaPairs.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Extracted Q&A Pairs</CardTitle>
+              <CardDescription>
+                Successfully extracted {qaPairs.length} Q&A pair{qaPairs.length !== 1 ? "s" : ""}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[50px]">#</TableHead>
+                    <TableHead>Question</TableHead>
+                    <TableHead>Answer</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qaPairs.map((qa, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell>{qa.question}</TableCell>
+                      <TableCell>{qa.answer}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
